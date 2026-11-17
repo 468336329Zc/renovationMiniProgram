@@ -54,6 +54,13 @@ jobs:
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > keystore/demo-release.jks
           test -s keystore/demo-release.jks
+          STORE_TYPE=$(keytool -list -keystore keystore/demo-release.jks -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | awk -F': ' '/Keystore type/{print $2}')
+          if [ "$STORE_TYPE" = "PKCS12" ]; then
+            echo "检测到 PKCS12：key 口令与 store 口令一致，使用 store 口令签名"
+            KEY_PASSWORD="$KEYSTORE_PASSWORD"
+          else
+            echo "检测到 JKS：使用独立的 ANDROID_KEY_PASSWORD 签名"
+          fi
           echo "ANDROID_KEYSTORE_PATH=$PWD/keystore/demo-release.jks" >> "$GITHUB_ENV"
           echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
