@@ -98,6 +98,16 @@ ANDROID_KEY_PASSWORD=*** \
 
 ---
 
+## 3. Android 更新签名
+
+管理员端 APK 使用仓库内固定的演示证书 `android-admin/keystore/demo-release.jks` 签名，证书 SHA-256 为：
+
+`6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`
+
+同一证书签名的后续 APK 可以直接覆盖安装，无需卸载旧版。CI 每次构建会自动递增 `versionCode`（`run_number + 1`）和 `versionName`（`1.0.run_number`）；正式上架时用 GitHub Secrets 覆盖为正式 keystore，仍保持证书固定。
+
+> 旧 `admin-v1.0.1` 的 CI 临时证书与当前固定证书不同，若已安装旧版，需要先卸载一次；从 `v1.0.2` 起不再需要。
+
 ## 3. GitHub Actions 签名与 Release
 
 工作流：`.github/workflows/android-release.yml`。推送到 `main` 或手动触发后：
