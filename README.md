@@ -104,13 +104,15 @@ ANDROID_KEY_PASSWORD=*** \
 
 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`
 
-密钥文件**不提交仓库**，GitHub Actions 从仓库 Secrets 注入；本地构建可用 `ANDROID_KEYSTORE_PATH` 指向自己的 keystore。同一证书签名的后续 APK 可以直接覆盖安装，无需卸载旧版。CI 每次构建会自动递增 `versionCode`（`run_number + 1`）和 `versionName`（`1.0.run_number`）。
+密钥文件**不提交仓库**，GitHub Actions 从仓库 Secrets 注入；本地构建可用 `ANDROID_KEYSTORE_PATH` 指向自己的 keystore，并提供 `ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。
+
+keystore 使用 JKS 格式以支持独立的 key 口令：store 口令与 key 口令分开，key 口令只通过 `ANDROID_KEY_PASSWORD` Secret 注入。同一证书签名的后续 APK 可以直接覆盖安装，无需卸载旧版。CI 每次构建会自动递增 `versionCode`（`run_number + 1`）和 `versionName`（`1.0.run_number`）。
 
 首次配置（在本机已登录 GitHub CLI 后执行）：
 
 ```bash
 gh auth login
-bash scripts/set-github-secrets.sh
+ANDROID_KEY_PASSWORD='你的 key 口令' bash scripts/set-github-secrets.sh
 ```
 
 未配置 `ANDROID_KEYSTORE_BASE64` 时，Action 会直接失败并提示，不会再用临时证书生成不可覆盖安装的 APK。

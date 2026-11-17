@@ -20,3 +20,6 @@ ui-design-runs/
 
 # local delivery bundle
 dist/*.zip
+
+# signing secrets must never be committed
+dist/android-signing-secrets.txt
