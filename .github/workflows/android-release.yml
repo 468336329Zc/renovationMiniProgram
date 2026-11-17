@@ -86,11 +86,18 @@ jobs:
             echo "decoded_sha256=$(sha256sum /tmp/diag.jks 2>/dev/null | cut -d' ' -f1)"
             keytool -list -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" 2>&1 | grep -E 'Keystore type|Alias name|Certificate fingerprint' | head -10
             mkdir -p /tmp/diagjar && echo ok > /tmp/diagjar/a.txt && (cd /tmp/diagjar && jar cf /tmp/diag.jar a.txt)
+            if printf %s "$KEY_PASSWORD" | grep -q '！'; then echo "has_fullwidth_exclamation=true"; else echo "has_fullwidth_exclamation=false"; fi
             if jarsigner -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -sigalg SHA256withRSA -digestalg SHA-256 /tmp/diag.jar "$KEY_ALIAS" >/tmp/diag-sign.log 2>&1; then
               echo "key_password_check=OK"
             else
               echo "key_password_check=FAIL"
               tail -12 /tmp/diag-sign.log
+            fi
+            ASCII_PASS="${KEY_PASSWORD//！/!}"
+            if [ "$ASCII_PASS" != "$KEY_PASSWORD" ]; then
+              if jarsigner -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$ASCII_PASS" -sigalg SHA256withRSA -digestalg SHA-256 /tmp/diag.jar "$KEY_ALIAS" >/dev/null 2>&1; then echo "ascii_variant=OK"; else echo "ascii_variant=FAIL"; fi
+            else
+              echo "ascii_variant=NOT_APPLICABLE"
             fi
           } > "$OUT" 2>&1 || true
           cat "$OUT"
