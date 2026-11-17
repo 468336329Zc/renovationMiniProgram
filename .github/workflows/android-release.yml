@@ -56,7 +56,9 @@ jobs:
           test -s keystore/demo-release.jks
           STORE_PASS=""
           STORE_TYPE=""
-          for SP in "$KEYSTORE_PASSWORD" "renovation-demo" "$KEY_PASSWORD"; do
+          STORE_ASCII="${KEYSTORE_PASSWORD//！/!}"
+          KEY_ASCII="${KEY_PASSWORD//！/!}"
+          for SP in "$KEYSTORE_PASSWORD" "$STORE_ASCII" "$KEY_PASSWORD" "$KEY_ASCII" "renovation-demo"; do
             if keytool -list -keystore keystore/demo-release.jks -storepass "$SP" >/dev/null 2>&1; then
               STORE_PASS="$SP"
               STORE_TYPE=$(keytool -list -keystore keystore/demo-release.jks -storepass "$SP" 2>/dev/null | awk -F': ' '/Keystore type/{print $2}')
