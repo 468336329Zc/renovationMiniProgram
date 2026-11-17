@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.local
+*.log
+uploads/*
+!uploads/.gitkeep
+legacy-node/node_modules/

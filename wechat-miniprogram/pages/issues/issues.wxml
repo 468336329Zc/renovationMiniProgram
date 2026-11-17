@@ -1,0 +1,46 @@
+<view class="page page-safe">
+  <view class="head-row">
+    <view>
+      <view class="eyebrow">SITE ISSUES</view>
+      <view class="title">现场问题</view>
+      <view class="muted">发现问题就记下来，跟进到关闭，不让它拖到入住后。</view>
+    </view>
+    <button class="btn btn-sm" bindtap="toggleForm">{{showForm ? '收起' : '记问题'}}</button>
+  </view>
+
+  <view class="form-card" wx:if="{{showForm}}">
+    <view class="field">
+      <view class="field-label">问题描述</view>
+      <input class="input" placeholder="例如：客厅射灯色温不一致" value="{{title}}" bindinput="onTitle" />
+    </view>
+    <view class="field">
+      <view class="field-label">优先级</view>
+      <picker mode="selector" range="{{levels}}" value="{{levelIndex}}" bindchange="onLevel">
+        <view class="picker between"><text>{{levels[levelIndex]}}</text><text class="chev">›</text></view>
+      </picker>
+    </view>
+    <view class="field">
+      <view class="field-label">跟进备注</view>
+      <textarea class="textarea" placeholder="联系了谁、下一步怎么处理" value="{{note}}" bindinput="onNote"></textarea>
+    </view>
+    <button class="btn btn-block" bindtap="submit" loading="{{loading}}">保存问题</button>
+  </view>
+
+  <view class="issue-list">
+    <view class="card issue-card" wx:for="{{items}}" wx:key="id">
+      <view class="row between">
+        <view class="row">
+          <view class="pill {{item.level === '高' ? 'pill-red' : (item.level === '中' ? 'pill-orange' : 'pill-gray')}}">{{item.level}}</view>
+          <view class="pill {{item.status === '已解决' ? 'pill-green' : 'pill-blue'}}" style="margin-left:8rpx">{{item.status}}</view>
+        </view>
+        <view class="tiny">{{item.recordedAt}}</view>
+      </view>
+      <view class="issue-title">{{item.title}}</view>
+      <view class="issue-note">{{item.note || '暂无跟进备注'}}</view>
+      <view class="issue-actions" wx:if="{{item.status !== '已解决'}}">
+        <button class="btn btn-sm btn-soft" data-id="{{item.id}}" bindtap="resolve">标记已解决</button>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!items.length}}">还没有问题记录</view>
+  </view>
+</view>

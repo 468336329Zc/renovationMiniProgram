@@ -1,0 +1,30 @@
+<view class="page page-safe">
+  <view class="detail-hero">
+    <view class="eyebrow" style="color:rgba(255,255,255,0.7)">CONTRACT</view>
+    <view class="detail-title">{{contract.name}}</view>
+    <view class="detail-sub">{{contract.id}} · {{contract.status}}</view>
+    <view class="detail-numbers">
+      <view><view class="tiny light">合同总额</view><view class="detail-num">{{totalText}}</view></view>
+      <view><view class="tiny light">已付</view><view class="detail-num">{{paidText}}</view></view>
+      <view><view class="tiny light">待付</view><view class="detail-num">{{pendingText}}</view></view>
+    </view>
+  </view>
+
+  <view class="section-head"><view class="title-sm">付款计划</view><view class="tiny">节点 {{contract.nodesDone}}/{{contract.nodesTotal}}</view></view>
+  <view class="card">
+    <view class="payment-row" wx:for="{{contract.payments}}" wx:key="seq">
+      <view class="seq">{{item.seq}}</view>
+      <view class="flex1">
+        <view class="payment-title">第 {{item.seq}} 期 · {{item.amountText}}</view>
+        <view class="tiny">应付 {{item.dueDate || '未定'}} · {{item.paidAt ? '已付 ' + item.paidAt : '待付款'}}</view>
+      </view>
+      <view class="pill {{item.status === '已付' ? 'pill-green' : 'pill-orange'}}">{{item.status}}</view>
+      <button wx:if="{{item.status !== '已付'}}" class="btn btn-sm btn-soft pay-btn" data-seq="{{item.seq}}" bindtap="pay">付款</button>
+    </view>
+  </view>
+
+  <view class="security-note">
+    <view class="tiny">安全提示</view>
+    <view class="muted">合同付款走服务端订单校验；客户端不能直接把合同标记为已付。</view>
+  </view>
+</view>

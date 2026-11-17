@@ -1,0 +1,9 @@
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12rpx; margin-top: 24rpx; }
+.summary-cell { background: #FFFFFF; border-radius: 18rpx; padding: 20rpx; }
+.summary-value { font-size: 32rpx; font-weight: 700; margin-top: 6rpx; }
+.summary-value.orange { color: #B45309; }
+.contract-card { margin-top: 16rpx; padding: 24rpx; }
+.contract-pct { font-size: 36rpx; font-weight: 700; color: #155EEF; }
+.contract-foot { margin-top: 12rpx; }
+.pending-pill { display: inline-block; margin-top: 12rpx; font-size: 22rpx; color: #B45309; background: #FFF3E4; border-radius: 999rpx; padding: 6rpx 14rpx; }

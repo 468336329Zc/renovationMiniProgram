@@ -1,0 +1,8 @@
+.venv
+__pycache__
+*.pyc
+.env
+uploads
+legacy-node
+tests
+sql/002_seed.sql

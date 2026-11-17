@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keyStorePath = System.getenv("ANDROID_KEYSTORE_PATH") ?: "${rootDir}/keystore/demo-release.jks"
+def ksPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "renovation-demo"
+def ksAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "renovation"
+def ksKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "renovation-demo"
+
+android {
+    namespace "com.renovation.admin"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.renovation.admin"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            if (file(keyStorePath).exists()) {
+                storeFile file(keyStorePath)
+                storePassword ksPassword
+                keyAlias ksAlias
+                keyPassword ksKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (file(keyStorePath).exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            applicationIdSuffix ".debug"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

@@ -1,0 +1,22 @@
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.stat-hero { background: #155EEF; color: #FFFFFF; border-radius: 26rpx; padding: 30rpx; margin-top: 22rpx; }
+.stat-label { font-size: 22rpx; color: rgba(255,255,255,0.7); }
+.stat-value { font-size: 54rpx; font-weight: 700; margin-top: 8rpx; letter-spacing: -1rpx; }
+.budget-pill { font-size: 22rpx; background: rgba(255,255,255,0.14); border-radius: 999rpx; padding: 8rpx 16rpx; }
+.bar.white { background: rgba(255,255,255,0.18); }
+.bar.white > view { background: #FFFFFF; }
+.stat-foot { margin-top: 10rpx; font-size: 22rpx; color: rgba(255,255,255,0.72); }
+.cat-row { padding: 16rpx 0; }
+.cat-line { display: flex; justify-content: space-between; margin-bottom: 10rpx; }
+.cat-name { font-size: 24rpx; font-weight: 600; }
+.cat-amount { font-size: 24rpx; font-weight: 700; }
+.cat-pct { margin-top: 4rpx; text-align: right; }
+.chart-card { padding-top: 34rpx; }
+.month-chart { display: flex; align-items: flex-end; gap: 16rpx; height: 300rpx; }
+.month-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.month-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.month-bar { width: 36rpx; min-height: 8rpx; background: #155EEF; border-radius: 8rpx 8rpx 0 0; }
+.month-value { font-size: 18rpx; color: #155EEF; font-weight: 600; margin-top: 6rpx; }
+.month-label { font-size: 18rpx; color: #9AA6BB; margin-top: 2rpx; }
+.export-card { margin-top: 24rpx; background: #FFFFFF; border-radius: 20rpx; padding: 24rpx 26rpx; display: flex; justify-content: space-between; align-items: center; border-left: 8rpx solid #155EEF; }
+.export-arrow { font-size: 38rpx; color: #155EEF; font-weight: 700; }

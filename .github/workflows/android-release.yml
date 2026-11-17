@@ -1,0 +1,90 @@
+name: Android Admin Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android-admin/**'
+      - '.github/workflows/android-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - name: Prepare signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > keystore/demo-release.jks
+            echo "ANDROID_KEYSTORE_PATH=$PWD/keystore/demo-release.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "使用仓库 Secrets 中的正式签名密钥"
+          else
+            keytool -genkeypair -v \
+              -keystore keystore/demo-release.jks \
+              -storepass renovation-demo \
+              -keypass renovation-demo \
+              -alias renovation \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Renovation Admin, OU=Demo, O=Renovation, L=Chongqing, ST=Chongqing, C=CN"
+            echo "ANDROID_KEYSTORE_PATH=$PWD/keystore/demo-release.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=renovation-demo" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=renovation" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=renovation-demo" >> "$GITHUB_ENV"
+            echo "::warning::未配置 ANDROID_KEYSTORE_BASE64，使用 CI 临时演示 keystore；正式上架请配置 Secrets"
+          fi
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify signature
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs "$APK"
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging "$APK" | head -5
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: renovation-admin-apk
+          path: android-admin/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: admin-v1.0.0
+          name: 装修记 · 管理员端 v1.0.0
+          body: |
+            Android 管理员端原生 APK（本地 SQLite 演示数据）。
+            构建：Gradle + JDK 17；如未配置签名 Secrets，则使用 CI 临时演示 keystore。
+          files: android-admin/app/build/outputs/apk/release/app-release.apk
+          fail_on_unmatched_files: true
+          make_latest: true

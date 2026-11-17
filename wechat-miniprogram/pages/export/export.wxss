@@ -1,0 +1,13 @@
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.lock-card { background: #FFFFFF; border-radius: 26rpx; padding: 30rpx; margin-top: 24rpx; text-align: center; }
+.lock-icon { width: 88rpx; height: 88rpx; line-height: 88rpx; border-radius: 24rpx; background: #EAF0FF; color: #155EEF; font-size: 38rpx; margin: 0 auto 18rpx; }
+.lock-copy { font-size: 24rpx; color: #7A869A; line-height: 1.55; margin: 10rpx 0 22rpx; }
+.ad-preview { display: flex; align-items: center; gap: 12rpx; background: #F7F9FE; border: 2rpx dashed #D6E2FA; border-radius: 14rpx; padding: 18rpx; margin-bottom: 20rpx; }
+.ad-tag { font-size: 18rpx; color: #9AA6BB; border: 1rpx solid #C9D6EE; border-radius: 6rpx; padding: 2rpx 8rpx; flex: none; }
+.ad-copy { font-size: 22rpx; color: #7A869A; line-height: 1.4; text-align: left; }
+.lock-note { margin-top: 16rpx; line-height: 1.5; }
+.unlocked-card { background: #FFFFFF; border-radius: 26rpx; padding: 30rpx; margin-top: 24rpx; }
+.preview-box { background: #0B1B33; color: #D7E4FF; border-radius: 14rpx; padding: 18rpx; margin-top: 20rpx; font-family: monospace; font-size: 18rpx; line-height: 1.6; max-height: 300rpx; overflow: auto; }
+.preview-line { white-space: pre-wrap; word-break: break-all; }
+.export-actions { display: flex; gap: 14rpx; margin-top: 20rpx; }
+.flex1 { flex: 1; }

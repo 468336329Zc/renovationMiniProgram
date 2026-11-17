@@ -1,0 +1,60 @@
+<view class="page page-safe">
+  <view class="profile-head">
+    <view class="avatar">{{initial}}</view>
+    <view class="flex1">
+      <view class="title">{{user.name || '张川'}}</view>
+      <view class="tiny">{{user.city || '重庆'}} · 装修账本 {{user.id}}</view>
+    </view>
+    <view class="mode-pill">{{modeLabel}}</view>
+  </view>
+
+  <view class="account-card">
+    <view class="tiny">当前项目</view>
+    <view class="project-name">{{project.name || '金茂悦 · 110.8㎡法式中古'}}</view>
+    <view class="row between" style="margin-top:12rpx">
+      <view class="tiny">预算 {{budgetText}}</view>
+      <view class="tiny">已支出 {{spentText}}</view>
+    </view>
+  </view>
+
+  <view class="section-head"><view class="title-sm">账本与工具</view></view>
+  <view class="menu-card">
+    <view class="menu-row" data-url="/pages/stats/stats" bindtap="openPage">
+      <view class="menu-icon">Σ</view>
+      <view class="flex1"><view class="menu-title">费用统计</view><view class="tiny">分类构成与月度趋势</view></view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="menu-row" data-url="/pages/contracts/contracts" bindtap="openPage">
+      <view class="menu-icon">▤</view>
+      <view class="flex1"><view class="menu-title">合同付款</view><view class="tiny">总额、已付、待付与节点</view></view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="menu-row" data-url="/pages/issues/issues" bindtap="openPage">
+      <view class="menu-icon">!</view>
+      <view class="flex1"><view class="menu-title">现场问题</view><view class="tiny">跟进到关闭</view></view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="menu-row" data-url="/pages/export/export" bindtap="openPage">
+      <view class="menu-icon">↗</view>
+      <view class="flex1"><view class="menu-title">导出报表</view><view class="tiny">看激励视频解锁 CSV</view></view>
+      <view class="menu-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="section-head"><view class="title-sm">关于与安全</view></view>
+  <view class="menu-card">
+    <view class="menu-row" bindtap="showSecurity">
+      <view class="menu-icon">◈</view>
+      <view class="flex1"><view class="menu-title">数据与鉴权说明</view><view class="tiny">密钥不进小程序包，接口由服务端校验</view></view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="menu-row" bindtap="showAbout">
+      <view class="menu-icon">i</view>
+      <view class="flex1"><view class="menu-title">关于装修记</view><view class="tiny">版本 {{version}}</view></view>
+      <view class="menu-arrow">›</view>
+    </view>
+  </view>
+
+  <button class="btn btn-ghost btn-block logout" bindtap="logout">退出登录</button>
+  <view class="tiny footer">装修记 · 用户端 · 本地演示 / 服务端双模式</view>
+</view>

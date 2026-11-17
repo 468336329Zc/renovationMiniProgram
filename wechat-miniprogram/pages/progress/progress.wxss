@@ -1,0 +1,12 @@
+.head-row { display: flex; justify-content: space-between; align-items: flex-end; }
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.progress-overview { background: #FFFFFF; border-radius: 20rpx; padding: 22rpx 24rpx; margin-top: 22rpx; }
+.progress-overview .tiny { color: #52627C; }
+.seq { width: 38rpx; height: 38rpx; line-height: 38rpx; border-radius: 50%; background: #EAF0FF; color: #155EEF; text-align: center; font-size: 18rpx; font-weight: 700; margin-right: 12rpx; flex: none; }
+.node-date { font-size: 22rpx; color: #9AA6BB; margin-top: 12rpx; }
+.node-note { font-size: 24rpx; color: #52627C; margin-top: 10rpx; line-height: 1.5; }
+.photo-row { display: flex; align-items: center; gap: 10rpx; margin-top: 14rpx; flex-wrap: wrap; }
+.thumb { width: 92rpx; height: 92rpx; border-radius: 10rpx; background: #F0F3F8; }
+.photo-count { font-size: 20rpx; color: #9AA6BB; }
+.node-actions { display: flex; gap: 12rpx; margin-top: 18rpx; }
+.node-actions .btn { flex: 1; }

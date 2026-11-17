@@ -1,0 +1,12 @@
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.amount-box { background: #FFFFFF; border-radius: 24rpx; padding: 24rpx 28rpx; margin-top: 24rpx; border-left: 8rpx solid #155EEF; }
+.amount-input-row { display: flex; align-items: baseline; margin-top: 10rpx; }
+.currency { font-size: 36rpx; font-weight: 700; color: #155EEF; margin-right: 10rpx; }
+.amount-input { font-size: 64rpx; font-weight: 700; height: 88rpx; flex: 1; letter-spacing: -1rpx; }
+.form-card { background: #FFFFFF; border-radius: 24rpx; padding: 26rpx 28rpx; margin-top: 20rpx; }
+.chev { color: #9AA6BB; font-size: 30rpx; }
+.voucher-row { display: flex; gap: 14rpx; margin-bottom: 10rpx; }
+.voucher { width: 120rpx; height: 120rpx; border-radius: 14rpx; overflow: hidden; background: #F0F3F8; }
+.voucher image { width: 100%; height: 100%; }
+.voucher.add { display: flex; align-items: center; justify-content: center; color: #155EEF; font-size: 48rpx; border: 2rpx dashed #C9D6EE; background: #F7F9FE; }
+.submit { margin-top: 28rpx; }

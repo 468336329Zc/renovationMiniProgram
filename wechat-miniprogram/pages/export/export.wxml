@@ -1,0 +1,40 @@
+<view class="page page-safe">
+  <view class="eyebrow">EXPORT</view>
+  <view class="title">导出报表</view>
+  <view class="muted">完整支出、问题与合同明细，导出为 CSV。看一次激励视频后由服务端签发解锁凭证。</view>
+
+  <view class="lock-card" wx:if="{{!unlocked}}">
+    <view class="lock-icon">▤</view>
+    <view class="title-sm">完整数据待解锁</view>
+    <view class="lock-copy">广告只出现在这里和页面底部；记账、进度、合同操作不受影响。</view>
+    <view class="ad-preview">
+      <view class="ad-tag">激励视频</view>
+      <view class="ad-copy">{{adUnit ? '观看完整视频后解锁' : '演示环境：模拟观看完成'}}</view>
+    </view>
+    <button class="btn btn-block" bindtap="watchAd" loading="{{loading}}">看视频解锁导出</button>
+    <view class="tiny lock-note">服务端会校验解锁 token；直接调用导出接口会被拒绝。</view>
+  </view>
+
+  <view class="unlocked-card" wx:else>
+    <view class="row between">
+      <view>
+        <view class="tiny">已解锁</view>
+        <view class="title-sm">CSV 报表</view>
+      </view>
+      <view class="pill pill-green">可导出</view>
+    </view>
+    <view class="preview-box">
+      <view class="preview-line" wx:for="{{preview}}" wx:key="*this">{{item}}</view>
+    </view>
+    <view class="export-actions">
+      <button class="btn btn-soft flex1" bindtap="copyCsv">复制 CSV</button>
+      <button class="btn flex1" bindtap="saveCsv">保存文件</button>
+    </view>
+    <view class="tiny lock-note">导出只包含当前账号的数据；服务端按用户隔离。</view>
+  </view>
+
+  <view class="ad-slot">
+    <view class="ad-tag">广告</view>
+    <view class="ad-copy">底部广告位常驻但不遮挡内容；导出解锁是唯一激励视频场景。</view>
+  </view>
+</view>
