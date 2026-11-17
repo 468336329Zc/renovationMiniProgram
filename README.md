@@ -107,7 +107,7 @@ ANDROID_KEY_PASSWORD=*** \
 3. `./gradlew assembleRelease`；
 4. `apksigner verify` + `aapt dump badging`；
 5. 上传 artifact `renovation-admin-apk`；
-6. 发布 GitHub Release `admin-v1.0.0`，APK 作为 Release 资产。
+6. 发布 GitHub Release `admin-v1.0.1`，APK 作为 Release 资产。
 
 正式签名需要配置以下 Secrets：
 
