@@ -83,6 +83,7 @@ jobs:
             echo "alias=$KEY_ALIAS"
             echo "$KEYSTORE_BASE64" | base64 -d > /tmp/diag.jks 2>/dev/null || true
             echo "decoded_bytes=$(wc -c < /tmp/diag.jks 2>/dev/null || echo 0)"
+            echo "decoded_sha256=$(sha256sum /tmp/diag.jks 2>/dev/null | cut -d' ' -f1)"
             keytool -list -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" 2>&1 | grep -E 'Keystore type|Alias name|Certificate fingerprint' | head -10
             mkdir -p /tmp/diagjar && echo ok > /tmp/diagjar/a.txt && (cd /tmp/diagjar && jar cf /tmp/diag.jar a.txt)
             if jarsigner -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -sigalg SHA256withRSA -digestalg SHA-256 /tmp/diag.jar "$KEY_ALIAS" >/tmp/diag-sign.log 2>&1; then
