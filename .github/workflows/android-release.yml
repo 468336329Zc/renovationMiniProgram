@@ -80,8 +80,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: admin-v1.0.0
-          name: 装修记 · 管理员端 v1.0.0
+          tag_name: admin-v1.0.1
+          name: 装修记 · 管理员端 v1.0.1
           body: |
             Android 管理员端原生 APK（本地 SQLite 演示数据）。
             构建：Gradle + JDK 17；如未配置签名 Secrets，则使用 CI 临时演示 keystore。
