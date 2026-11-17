@@ -17,3 +17,6 @@ android-admin/keystore/*.keystore
 ui-design-runs/
 *.iml
 .DS_Store
+
+# local delivery bundle
+dist/*.zip
