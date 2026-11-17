@@ -54,16 +54,28 @@ jobs:
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > keystore/demo-release.jks
           test -s keystore/demo-release.jks
-          STORE_TYPE=$(keytool -list -keystore keystore/demo-release.jks -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | awk -F': ' '/Keystore type/{print $2}')
+          STORE_PASS=""
+          STORE_TYPE=""
+          for SP in "$KEYSTORE_PASSWORD" "renovation-demo" "$KEY_PASSWORD"; do
+            if keytool -list -keystore keystore/demo-release.jks -storepass "$SP" >/dev/null 2>&1; then
+              STORE_PASS="$SP"
+              STORE_TYPE=$(keytool -list -keystore keystore/demo-release.jks -storepass "$SP" 2>/dev/null | awk -F': ' '/Keystore type/{print $2}')
+              break
+            fi
+          done
+          if [ -z "$STORE_PASS" ]; then
+            echo "::error::无法打开签名 keystore，请检查 ANDROID_KEYSTORE_PASSWORD。"
+            exit 1
+          fi
           if [ "$STORE_TYPE" = "PKCS12" ]; then
             echo "检测到 PKCS12：key 口令与 store 口令一致"
-            KEY_PASSWORD="$KEYSTORE_PASSWORD"
+            KEY_PASSWORD="$STORE_PASS"
           else
             echo "检测到 JKS：尝试解锁并把 key 口令归一为 store 口令"
             UNLOCKED=0
             ASCII_ALT="${KEY_PASSWORD//！/!}"
-            for CAND in "$KEY_PASSWORD" "$ASCII_ALT" "$KEYSTORE_PASSWORD"; do
-              if keytool -keypasswd -alias "$KEY_ALIAS" -keystore keystore/demo-release.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$CAND" -new "$KEYSTORE_PASSWORD" >/dev/null 2>&1; then
+            for CAND in "$KEY_PASSWORD" "$ASCII_ALT" "$STORE_PASS"; do
+              if keytool -keypasswd -alias "$KEY_ALIAS" -keystore keystore/demo-release.jks -storepass "$STORE_PASS" -keypass "$CAND" -new "$STORE_PASS" >/dev/null 2>&1; then
                 UNLOCKED=1
                 break
               fi
@@ -72,10 +84,10 @@ jobs:
               echo "::error::无法解锁签名私钥，请检查 ANDROID_KEY_PASSWORD 与 ANDROID_KEY_ALIAS。"
               exit 1
             fi
-            KEY_PASSWORD="$KEYSTORE_PASSWORD"
+            KEY_PASSWORD="$STORE_PASS"
           fi
           echo "ANDROID_KEYSTORE_PATH=$PWD/keystore/demo-release.jks" >> "$GITHUB_ENV"
-          echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$STORE_PASS" >> "$GITHUB_ENV"
           echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
           echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
           echo "使用 GitHub Secrets 注入的固定签名密钥"
