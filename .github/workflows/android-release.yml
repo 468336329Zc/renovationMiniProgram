@@ -56,56 +56,29 @@ jobs:
           test -s keystore/demo-release.jks
           STORE_TYPE=$(keytool -list -keystore keystore/demo-release.jks -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | awk -F': ' '/Keystore type/{print $2}')
           if [ "$STORE_TYPE" = "PKCS12" ]; then
-            echo "检测到 PKCS12：key 口令与 store 口令一致，使用 store 口令签名"
+            echo "检测到 PKCS12：key 口令与 store 口令一致"
             KEY_PASSWORD="$KEYSTORE_PASSWORD"
           else
-            echo "检测到 JKS：使用独立的 ANDROID_KEY_PASSWORD 签名"
+            echo "检测到 JKS：尝试解锁并把 key 口令归一为 store 口令"
+            UNLOCKED=0
+            ASCII_ALT="${KEY_PASSWORD//！/!}"
+            for CAND in "$KEY_PASSWORD" "$ASCII_ALT" "$KEYSTORE_PASSWORD"; do
+              if keytool -keypasswd -alias "$KEY_ALIAS" -keystore keystore/demo-release.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$CAND" -new "$KEYSTORE_PASSWORD" >/dev/null 2>&1; then
+                UNLOCKED=1
+                break
+              fi
+            done
+            if [ "$UNLOCKED" != "1" ]; then
+              echo "::error::无法解锁签名私钥，请检查 ANDROID_KEY_PASSWORD 与 ANDROID_KEY_ALIAS。"
+              exit 1
+            fi
+            KEY_PASSWORD="$KEYSTORE_PASSWORD"
           fi
           echo "ANDROID_KEYSTORE_PATH=$PWD/keystore/demo-release.jks" >> "$GITHUB_ENV"
           echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
           echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
           echo "使用 GitHub Secrets 注入的固定签名密钥"
-
-      - name: Diagnose signing
-        if: always()
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          OUT=../ci-signing-diagnostics.txt
-          {
-            echo "base64_len=$(printf %s "$KEYSTORE_BASE64" | wc -c)"
-            echo "store_pass_len=$(printf %s "$KEYSTORE_PASSWORD" | wc -c)"
-            echo "key_pass_len=$(printf %s "$KEY_PASSWORD" | wc -c)"
-            echo "alias=$KEY_ALIAS"
-            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/diag.jks 2>/dev/null || true
-            echo "decoded_bytes=$(wc -c < /tmp/diag.jks 2>/dev/null || echo 0)"
-            echo "decoded_sha256=$(sha256sum /tmp/diag.jks 2>/dev/null | cut -d' ' -f1)"
-            keytool -list -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" 2>&1 | grep -E 'Keystore type|Alias name|Certificate fingerprint' | head -10
-            mkdir -p /tmp/diagjar && echo ok > /tmp/diagjar/a.txt && (cd /tmp/diagjar && jar cf /tmp/diag.jar a.txt)
-            if printf %s "$KEY_PASSWORD" | grep -q '！'; then echo "has_fullwidth_exclamation=true"; else echo "has_fullwidth_exclamation=false"; fi
-            if jarsigner -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -sigalg SHA256withRSA -digestalg SHA-256 /tmp/diag.jar "$KEY_ALIAS" >/tmp/diag-sign.log 2>&1; then
-              echo "key_password_check=OK"
-            else
-              echo "key_password_check=FAIL"
-              tail -12 /tmp/diag-sign.log
-            fi
-            ASCII_PASS="${KEY_PASSWORD//！/!}"
-            if [ "$ASCII_PASS" != "$KEY_PASSWORD" ]; then
-              if jarsigner -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$ASCII_PASS" -sigalg SHA256withRSA -digestalg SHA-256 /tmp/diag.jar "$KEY_ALIAS" >/dev/null 2>&1; then echo "ascii_variant=OK"; else echo "ascii_variant=FAIL"; fi
-            else
-              echo "ascii_variant=NOT_APPLICABLE"
-            fi
-          } > "$OUT" 2>&1 || true
-          cat "$OUT"
-          git config user.name 'Renovation Bot'
-          git config user.email 'bot@renovation.local'
-          git add "$OUT"
-          git commit -m "[skip ci] 记录签名诊断结果" || true
-          git push || true
 
       - name: Build release APK
         run: ./gradlew assembleRelease --no-daemon
