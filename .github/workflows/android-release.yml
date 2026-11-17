@@ -80,7 +80,8 @@ jobs:
             echo "检测到 JKS：尝试解锁并把 key 口令归一为 store 口令"
             UNLOCKED=0
             ASCII_ALT="${KEY_PASSWORD//！/!}"
-            for CAND in "$KEY_PASSWORD" "$ASCII_ALT" "$STORE_PASS"; do
+            FULLWIDTH_ALT=$(printf '%s' "$KEY_PASSWORD" | sed 's/!/！/g')
+            for CAND in "$KEY_PASSWORD" "$ASCII_ALT" "$FULLWIDTH_ALT" "$STORE_PASS"; do
               if keytool -keypasswd -alias "$KEY_ALIAS" -keystore keystore/demo-release.jks -storepass "$STORE_PASS" -keypass "$CAND" -new "$STORE_PASS" >/dev/null 2>&1; then
                 UNLOCKED=1
                 break
