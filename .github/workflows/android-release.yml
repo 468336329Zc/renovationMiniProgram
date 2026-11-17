@@ -67,6 +67,38 @@ jobs:
           echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
           echo "使用 GitHub Secrets 注入的固定签名密钥"
 
+      - name: Diagnose signing
+        if: always()
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          OUT=../ci-signing-diagnostics.txt
+          {
+            echo "base64_len=$(printf %s "$KEYSTORE_BASE64" | wc -c)"
+            echo "store_pass_len=$(printf %s "$KEYSTORE_PASSWORD" | wc -c)"
+            echo "key_pass_len=$(printf %s "$KEY_PASSWORD" | wc -c)"
+            echo "alias=$KEY_ALIAS"
+            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/diag.jks 2>/dev/null || true
+            echo "decoded_bytes=$(wc -c < /tmp/diag.jks 2>/dev/null || echo 0)"
+            keytool -list -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" 2>&1 | grep -E 'Keystore type|Alias name|Certificate fingerprint' | head -10
+            mkdir -p /tmp/diagjar && echo ok > /tmp/diagjar/a.txt && (cd /tmp/diagjar && jar cf /tmp/diag.jar a.txt)
+            if jarsigner -keystore /tmp/diag.jks -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -sigalg SHA256withRSA -digestalg SHA-256 /tmp/diag.jar "$KEY_ALIAS" >/tmp/diag-sign.log 2>&1; then
+              echo "key_password_check=OK"
+            else
+              echo "key_password_check=FAIL"
+              tail -12 /tmp/diag-sign.log
+            fi
+          } > "$OUT" 2>&1 || true
+          cat "$OUT"
+          git config user.name 'Renovation Bot'
+          git config user.email 'bot@renovation.local'
+          git add "$OUT"
+          git commit -m "[skip ci] 记录签名诊断结果" || true
+          git push || true
+
       - name: Build release APK
         run: ./gradlew assembleRelease --no-daemon
 
