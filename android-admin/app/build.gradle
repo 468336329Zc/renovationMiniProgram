@@ -51,3 +51,5 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 }
+
+// 固定签名构建触发
