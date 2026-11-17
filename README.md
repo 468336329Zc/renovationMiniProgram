@@ -10,7 +10,7 @@
 | 用户端 | `wechat-miniprogram/` | 微信小程序，11 个页面，本地演示 / 服务端双模式 |
 
 设计语言：冷白底 + 电光蓝（`#155EEF`）+ 无衬线；管理员端更密、更像数据工作台。  
-已确认原型：用户端 `app_17j79wqgjur`，管理员端 `app_17j7bwx9cm3`。
+已确认原型：用户端 [`app_17j79wqgjur`](https://4mgcp3ffua0r8.doubao.link/app/app_17j79wqgjur)，管理员端 [`app_17j7bwx9cm3`](https://4mgcp3ffua0r8.doubao.link/app/app_17j7bwx9cm3)。
 
 ---
 
