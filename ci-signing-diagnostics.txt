@@ -1,8 +1,9 @@
-base64_len=3029
+base64_len=3028
 store_pass_len=15
 key_pass_len=15
 alias=renovation
 decoded_bytes=2271
+decoded_sha256=b1a1cb9ecd40ff65b2f58f96aa60f2d2d65c2158db268715b985d911cf46f15e
 Keystore type: JKS
 Certificate fingerprint (SHA-256): 68:88:36:3D:AE:46:C0:45:3A:83:5B:FA:EC:AD:ED:EF:E5:D8:4B:61:C7:72:9F:44:E7:E5:95:6B:82:41:5D:65
 key_password_check=FAIL
