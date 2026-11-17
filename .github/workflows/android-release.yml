@@ -54,6 +54,10 @@ jobs:
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > keystore/demo-release.jks
           test -s keystore/demo-release.jks
+          echo "::warning::storepass_sha=$(printf %s "$KEYSTORE_PASSWORD" | sha256sum | cut -c1-12)"
+          echo "::warning::keypass_sha=$(printf %s "$KEY_PASSWORD" | sha256sum | cut -c1-12)"
+          echo "::warning::storepass_has_fullwidth=$(printf %s "$KEYSTORE_PASSWORD" | grep -c '！')"
+          echo "::warning::keypass_has_fullwidth=$(printf %s "$KEY_PASSWORD" | grep -c '！')"
           STORE_PASS=""
           STORE_TYPE=""
           STORE_ASCII="${KEYSTORE_PASSWORD//！/!}"
