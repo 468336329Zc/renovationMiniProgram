@@ -77,7 +77,7 @@ export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 # 产物：app/build/outputs/apk/release/app-release.apk
 ```
 
-本地演示签名在 `keystore/demo-release.jks`（仅演示，不提交仓库）。正式签名通过环境变量覆盖：
+本地演示签名固定在 `android-admin/keystore/demo-release.jks`（演示证书，密码 `renovation-demo`）。正式签名通过环境变量覆盖：
 
 ```bash
 ANDROID_KEYSTORE_PATH=/abs/release.jks \
@@ -103,11 +103,12 @@ ANDROID_KEY_PASSWORD=*** \
 工作流：`.github/workflows/android-release.yml`。推送到 `main` 或手动触发后：
 
 1. `ubuntu-latest` + JDK 17 + Android SDK 34；
-2. 读取 Secrets 生成签名 keystore；未配置时生成 CI 临时演示 keystore 并输出 warning；
-3. `./gradlew assembleRelease`；
-4. `apksigner verify` + `aapt dump badging`；
-5. 上传 artifact `renovation-admin-apk`；
-6. 发布 GitHub Release `admin-v1.0.1`，APK 作为 Release 资产。
+2. 读取 Secrets 生成正式签名 keystore；未配置时使用仓库内固定的 `android-admin/keystore/demo-release.jks` 演示证书，所有构建证书一致；
+3. 自动把 `versionCode` 设为 `run_number + 1`、`versionName` 设为 `1.0.run_number`，保证每次构建可覆盖安装；
+4. `./gradlew assembleRelease`；
+5. `apksigner verify` + `aapt dump badging`；
+6. 上传 artifact `renovation-admin-apk`；
+7. 发布 GitHub Release `admin-v1.0.<run_number>`，APK 作为 Release 资产。
 
 正式签名需要配置以下 Secrets：
 

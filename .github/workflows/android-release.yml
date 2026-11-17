@@ -31,6 +31,15 @@ jobs:
         with:
           packages: 'platforms;android-34 build-tools;34.0.0'
 
+      - name: Set build version
+        run: |
+          VERSION_NAME="1.0.${GITHUB_RUN_NUMBER}"
+          VERSION_CODE=$((GITHUB_RUN_NUMBER + 1))
+          sed -i "s/versionCode [0-9]*/versionCode ${VERSION_CODE}/" app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${VERSION_NAME}\"/" app/build.gradle
+          echo "APP_VERSION_NAME=${VERSION_NAME}" >> "$GITHUB_ENV"
+          echo "APP_VERSION_CODE=${VERSION_CODE}" >> "$GITHUB_ENV"
+
       - name: Prepare signing keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -46,19 +55,15 @@ jobs:
             echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
             echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
             echo "使用仓库 Secrets 中的正式签名密钥"
-          else
-            keytool -genkeypair -v \
-              -keystore keystore/demo-release.jks \
-              -storepass renovation-demo \
-              -keypass renovation-demo \
-              -alias renovation \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Renovation Admin, OU=Demo, O=Renovation, L=Chongqing, ST=Chongqing, C=CN"
+          elif [ -f keystore/demo-release.jks ]; then
             echo "ANDROID_KEYSTORE_PATH=$PWD/keystore/demo-release.jks" >> "$GITHUB_ENV"
             echo "ANDROID_KEYSTORE_PASSWORD=renovation-demo" >> "$GITHUB_ENV"
             echo "ANDROID_KEY_ALIAS=renovation" >> "$GITHUB_ENV"
             echo "ANDROID_KEY_PASSWORD=renovation-demo" >> "$GITHUB_ENV"
-            echo "::warning::未配置 ANDROID_KEYSTORE_BASE64，使用 CI 临时演示 keystore；正式上架请配置 Secrets"
+            echo "使用仓库内固定的演示 keystore，证书在所有构建中保持一致"
+          else
+            echo "::error::缺少固定签名 keystore：请提交 android-admin/keystore/demo-release.jks，或配置 ANDROID_KEYSTORE_BASE64 Secret"
+            exit 1
           fi
 
       - name: Build release APK
@@ -80,8 +85,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: admin-v1.0.1
-          name: 装修记 · 管理员端 v1.0.1
+          tag_name: admin-v${{ env.APP_VERSION_NAME }}
+          name: 装修记 · 管理员端 v${{ env.APP_VERSION_NAME }}
           body: |
             Android 管理员端原生 APK（本地 SQLite 演示数据）。
             构建：Gradle + JDK 17；如未配置签名 Secrets，则使用 CI 临时演示 keystore。
