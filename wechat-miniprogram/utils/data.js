@@ -1,4 +1,5 @@
 const api = require('./api');
+const config = require('./config');
 const local = require('./local');
 
 function app() { return getApp(); }
@@ -45,6 +46,12 @@ function normalizeExpense(e) {
   };
 }
 
+function absoluteAsset(url) {
+  if (!url) return '';
+  if (/^https?:\/\//.test(url)) return url;
+  return config.BASE_URL.replace(/\/api$/, '') + url;
+}
+
 function normalizeNode(n) {
   return {
     id: n.id,
@@ -53,7 +60,7 @@ function normalizeNode(n) {
     status: n.status,
     recordedAt: n.recordedAt || n.recorded_at || '',
     note: n.note || '',
-    photos: (n.photos || []).map(p => (typeof p === 'string' ? p : (p.url || p.file_url || ''))).filter(Boolean)
+    photos: (n.photos || []).map(p => absoluteAsset(typeof p === 'string' ? p : (p.url || p.file_url || ''))).filter(Boolean)
   };
 }
 

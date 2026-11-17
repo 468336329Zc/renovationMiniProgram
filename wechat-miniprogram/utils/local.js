@@ -30,7 +30,8 @@ function seed() {
     issues: [
       { id: 1, title: '客厅射灯色温不一致', level: '高', status: '待解决', recordedAt: '2026-11-12', note: '已联系灯具商家补发 3500K 同批次' },
       { id: 2, title: '全屋定制收口缝隙 3mm', level: '中', status: '待解决', recordedAt: '2026-11-15', note: '等待安装师傅上门调整' },
-      { id: 3, title: '卫生间地漏排水偏慢', level: '低', status: '已解决', recordedAt: '2026-10-10', note: '清理后排水正常' }
+      { id: 3, title: '卫生间地漏排水偏慢', level: '低', status: '已解决', recordedAt: '2026-10-10', note: '清理后排水正常' },
+      { id: 4, title: '主卧门套收口未打胶', level: '中', status: '待解决', recordedAt: '2026-11-16', note: '等待油漆工补胶' }
     ],
     contracts: [
       {
