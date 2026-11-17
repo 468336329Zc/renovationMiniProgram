@@ -1,0 +1,115 @@
+<view class="page page-safe">
+  <view class="topline">
+    <view>
+      <view class="eyebrow">RENOVATION LEDGER</view>
+      <view class="hello">下午好，{{userName}}</view>
+    </view>
+    <view class="mode-pill">{{modeLabel}}</view>
+  </view>
+
+  <view class="hero" bindtap="goStats">
+    <view class="hero-label">当前可用余额</view>
+    <view class="hero-value">{{summary.availableText}}<text class="unit">元</text></view>
+    <view class="hero-meta">
+      <text>总预算 {{summary.budgetText}}</text>
+      <text>已支出 {{summary.spentText}}</text>
+    </view>
+    <view class="hero-track"><view class="hero-fill" style="width:{{summary.usedPct}}%"></view></view>
+    <view class="hero-foot">
+      <text>预算执行 {{summary.usedPctText}}</text>
+      <text>合同待付 {{summary.contractPendingText}}</text>
+    </view>
+  </view>
+
+  <view class="quick-grid">
+    <view class="quick" bindtap="goAdd">
+      <view class="quick-icon">¥</view>
+      <view class="quick-title">记一笔</view>
+      <view class="quick-sub">支出 / 凭证</view>
+    </view>
+    <view class="quick" bindtap="goProgress">
+      <view class="quick-icon">▣</view>
+      <view class="quick-title">装修进度</view>
+      <view class="quick-sub">{{summary.nodeDone}}/{{summary.nodeTotal}} 节点</view>
+    </view>
+    <view class="quick" bindtap="goIssues">
+      <view class="quick-icon">!</view>
+      <view class="quick-title">现场问题</view>
+      <view class="quick-sub">{{summary.openIssues}} 条待解决</view>
+    </view>
+    <view class="quick" bindtap="goContracts">
+      <view class="quick-icon">▤</view>
+      <view class="quick-title">合同付款</view>
+      <view class="quick-sub">待付 {{summary.contractPendingShort}}</view>
+    </view>
+  </view>
+
+  <view class="section-head">
+    <view class="title-sm">装修进度</view>
+    <view class="link" bindtap="goProgress">全部节点</view>
+  </view>
+  <view class="card progress-card">
+    <view class="progress-top">
+      <view>
+        <view class="tiny">当前阶段</view>
+        <view class="title-sm">{{project.currentNode}}</view>
+      </view>
+      <view class="pill pill-blue">{{summary.nodeDone}}/{{summary.nodeTotal}} 完成</view>
+    </view>
+    <scroll-view scroll-x class="node-scroll">
+      <view class="node-strip">
+        <view class="node-mini" wx:for="{{nodes}}" wx:key="id" bindtap="goProgress">
+          <view class="node-dot {{item.status === '已完成' ? 'done' : (item.status === '进行中' ? 'now' : '')}}">{{item.seq}}</view>
+          <view class="node-name">{{item.name}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="section-head">
+    <view class="title-sm">最近支出</view>
+    <view class="link" bindtap="goExpenses">去记账</view>
+  </view>
+  <view class="card">
+    <view class="expense-row" wx:for="{{recentExpenses}}" wx:key="id">
+      <view class="expense-cat">{{item.category}}</view>
+      <view class="flex1">
+        <view class="expense-note">{{item.note || item.payType}}</view>
+        <view class="tiny">{{item.spentAt}} · {{item.payType}}</view>
+      </view>
+      <view class="expense-amount">{{item.amountText}}</view>
+    </view>
+    <view class="empty" wx:if="{{!recentExpenses.length}}">还没有支出，先记第一笔</view>
+  </view>
+
+  <view class="section-head">
+    <view class="title-sm">待解决问题</view>
+    <view class="link" bindtap="goIssues">查看全部</view>
+  </view>
+  <view class="card">
+    <view class="issue-row" wx:for="{{openIssues}}" wx:key="id">
+      <view class="pill {{item.level === '高' ? 'pill-red' : (item.level === '中' ? 'pill-orange' : 'pill-gray')}}">{{item.level}}</view>
+      <view class="flex1 issue-body">
+        <view class="issue-title">{{item.title}}</view>
+        <view class="tiny">{{item.recordedAt}}</view>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+    <view class="empty" wx:if="{{!openIssues.length}}">现场没有待解决问题</view>
+  </view>
+
+  <view class="ad-slot" wx:if="{{ads.enabled}}" bindtap="goExport">
+    <view class="ad-tag">广告</view>
+    <view class="ad-copy">{{ads.copy || '底部广告位，不影响记账和进度操作。'}}</view>
+    <view class="ad-arrow">›</view>
+  </view>
+
+  <view class="stats-entry" bindtap="goStats">
+    <view>
+      <view class="hero-label" style="color:#155EEF">费用统计</view>
+      <view class="title-sm" style="margin-top:8rpx">看清钱花在哪</view>
+      <view class="tiny">分类构成 · 月度趋势 · 导出</view>
+    </view>
+    <view class="stats-arrow">↗</view>
+  </view>
+</view>

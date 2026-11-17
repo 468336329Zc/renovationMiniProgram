@@ -1,0 +1,13 @@
+.profile-head { display: flex; align-items: center; gap: 18rpx; padding: 18rpx 0 24rpx; }
+.avatar { width: 92rpx; height: 92rpx; border-radius: 50%; background: #155EEF; color: #FFFFFF; font-size: 34rpx; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.mode-pill { font-size: 20rpx; color: #7A869A; background: #FFFFFF; border: 2rpx solid #E6ECF7; border-radius: 999rpx; padding: 8rpx 14rpx; }
+.account-card { background: #FFFFFF; border-radius: 22rpx; padding: 24rpx 26rpx; border-left: 8rpx solid #155EEF; }
+.project-name { font-size: 32rpx; font-weight: 700; margin-top: 8rpx; line-height: 1.4; }
+.menu-card { background: #FFFFFF; border-radius: 20rpx; padding: 4rpx 24rpx; }
+.menu-row { display: flex; align-items: center; gap: 16rpx; padding: 22rpx 0; border-bottom: 1rpx solid #EEF2F9; }
+.menu-row:last-child { border-bottom: none; }
+.menu-icon { width: 52rpx; height: 52rpx; border-radius: 14rpx; background: #EAF0FF; color: #155EEF; display: flex; align-items: center; justify-content: center; font-size: 24rpx; font-weight: 700; }
+.menu-title { font-size: 26rpx; font-weight: 600; }
+.menu-arrow { color: #9AA6BB; font-size: 30rpx; }
+.logout { margin-top: 28rpx; }
+.footer { text-align: center; margin-top: 26rpx; }

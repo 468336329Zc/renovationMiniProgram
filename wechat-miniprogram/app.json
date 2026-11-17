@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/home/home",
+    "pages/expenses/expenses",
+    "pages/expense-form/expense-form",
+    "pages/progress/progress",
+    "pages/contracts/contracts",
+    "pages/contract-detail/contract-detail",
+    "pages/issues/issues",
+    "pages/stats/stats",
+    "pages/profile/profile",
+    "pages/export/export"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#F4F7FC",
+    "navigationBarTitleText": "装修记",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F4F7FC"
+  },
+  "tabBar": {
+    "color": "#7A869A",
+    "selectedColor": "#155EEF",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/home", "text": "首页" },
+      { "pagePath": "pages/expenses/expenses", "text": "记账" },
+      { "pagePath": "pages/progress/progress", "text": "进度" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

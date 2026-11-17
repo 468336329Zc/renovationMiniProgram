@@ -1,0 +1,44 @@
+<view class="page page-safe">
+  <view class="head-row">
+    <view>
+      <view class="eyebrow">EXPENSES</view>
+      <view class="title">支出明细</view>
+      <view class="muted">每笔支出都进入预算与统计</view>
+    </view>
+    <button class="btn btn-sm" bindtap="goAdd">记一笔</button>
+  </view>
+
+  <view class="total-card">
+    <view class="tiny">当前筛选合计</view>
+    <view class="total-value">{{totalText}}<text class="unit">元</text></view>
+    <view class="tiny">{{filtered.length}} 笔记录 · {{category}}</view>
+  </view>
+
+  <scroll-view scroll-x class="chips">
+    <view wx:for="{{categories}}" wx:key="*this" class="chip {{category === item ? 'on' : ''}}" data-category="{{item}}" bindtap="filter">{{item}}</view>
+  </scroll-view>
+
+  <view class="expense-list">
+    <view class="card expense-card" wx:for="{{filtered}}" wx:key="id">
+      <view class="row between">
+        <view class="row">
+          <view class="cat-badge">{{item.category}}</view>
+          <view class="pay-type">{{item.payType}}</view>
+        </view>
+        <view class="amount">{{item.amountText}}</view>
+      </view>
+      <view class="note">{{item.note || '未填写备注'}}</view>
+      <view class="row between foot">
+        <view class="tiny">{{item.spentAt}}</view>
+        <view class="pill {{item.risk === '超支' || item.risk === '异常' ? 'pill-red' : (item.risk === '关注' ? 'pill-orange' : 'pill-gray')}}">{{item.risk}}</view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!filtered.length}}">这个分类还没有支出</view>
+  </view>
+
+  <view class="ad-slot" bindtap="goExport">
+    <view class="ad-tag">广告</view>
+    <view class="ad-copy">想看完整报表？看一次激励视频即可解锁导出。</view>
+    <view class="ad-arrow">›</view>
+  </view>
+</view>

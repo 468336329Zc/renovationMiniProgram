@@ -1,0 +1,48 @@
+<view class="page page-safe">
+  <view class="head-row">
+    <view>
+      <view class="eyebrow">SITE PROGRESS</view>
+      <view class="title">装修进度</view>
+      <view class="muted">9 个节点，从开工到入住。每个节点都能留现场记录。</view>
+    </view>
+    <view class="pill pill-blue">{{done}}/{{total}} 完成</view>
+  </view>
+
+  <view class="progress-overview">
+    <view class="row between">
+      <view class="tiny">整体完成度</view>
+      <view class="tiny">{{pctText}}</view>
+    </view>
+    <view class="bar" style="margin-top:12rpx"><view style="width:{{pct}}%"></view></view>
+  </view>
+
+  <view class="timeline">
+    <view class="tl-node" wx:for="{{nodes}}" wx:key="id">
+      <view class="tl-dot {{item.status === '已完成' ? 'done' : (item.status === '进行中' ? 'now' : '')}}"></view>
+      <view class="tl-card">
+        <view class="row between">
+          <view class="row">
+            <view class="seq">{{item.seq}}</view>
+            <view class="title-sm">{{item.name}}</view>
+          </view>
+          <view class="pill {{item.status === '已完成' ? 'pill-green' : (item.status === '进行中' ? 'pill-orange' : 'pill-gray')}}">{{item.status}}</view>
+        </view>
+        <view class="node-date">{{item.recordedAt || '尚未记录时间'}}</view>
+        <view class="node-note" wx:if="{{item.note}}">{{item.note}}</view>
+        <view class="photo-row" wx:if="{{item.photos.length}}">
+          <image wx:for="{{item.photos}}" wx:for-item="photo" wx:key="*this" src="{{photo}}" mode="aspectFill" class="thumb" data-index="{{index}}" data-node="{{item.id}}" bindtap="preview" />
+          <view class="photo-count">{{item.photos.length}} 张现场</view>
+        </view>
+        <view class="node-actions">
+          <button class="btn btn-sm btn-soft" data-id="{{item.id}}" bindtap="changeStatus">更新状态</button>
+          <button class="btn btn-sm btn-ghost" data-id="{{item.id}}" bindtap="addPhoto">加现场照片</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="ad-slot">
+    <view class="ad-tag">提示</view>
+    <view class="ad-copy">节点照片只用于自家工地记录，服务端按用户隔离存储。</view>
+  </view>
+</view>

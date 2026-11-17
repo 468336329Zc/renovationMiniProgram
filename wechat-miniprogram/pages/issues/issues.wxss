@@ -1,0 +1,8 @@
+.head-row { display: flex; justify-content: space-between; align-items: flex-end; }
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.form-card { background: #FFFFFF; border-radius: 24rpx; padding: 26rpx 28rpx; margin-top: 22rpx; }
+.chev { color: #9AA6BB; font-size: 30rpx; }
+.issue-card { margin-top: 16rpx; padding: 24rpx; }
+.issue-title { font-size: 30rpx; font-weight: 700; margin-top: 16rpx; line-height: 1.4; }
+.issue-note { font-size: 24rpx; color: #52627C; line-height: 1.55; margin-top: 10rpx; }
+.issue-actions { display: flex; justify-content: flex-end; margin-top: 16rpx; }

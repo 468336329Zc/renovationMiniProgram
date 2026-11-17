@@ -1,0 +1,13 @@
+.head-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24rpx; }
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.total-card { background: #FFFFFF; border-radius: 24rpx; padding: 26rpx 28rpx; border-left: 8rpx solid #155EEF; }
+.total-value { font-size: 52rpx; font-weight: 700; margin: 8rpx 0 4rpx; letter-spacing: -1rpx; }
+.total-value .unit { font-size: 22rpx; font-weight: 400; color: #7A869A; margin-left: 6rpx; }
+.expense-list { margin-top: 10rpx; }
+.expense-card { margin-top: 16rpx; padding: 24rpx; }
+.cat-badge { font-size: 22rpx; font-weight: 700; color: #155EEF; background: #EAF0FF; border-radius: 8rpx; padding: 6rpx 12rpx; }
+.pay-type { font-size: 22rpx; color: #7A869A; margin-left: 12rpx; }
+.amount { font-size: 32rpx; font-weight: 700; }
+.note { font-size: 24rpx; color: #52627C; margin-top: 14rpx; }
+.foot { margin-top: 14rpx; }
+.ad-arrow { color: #9AA6BB; font-size: 28rpx; }

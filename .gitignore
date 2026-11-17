@@ -1,0 +1,19 @@
+# secrets
+server/.env
+server/.venv/
+server/__pycache__/
+server/**/__pycache__/
+server/uploads/*
+!server/uploads/.gitkeep
+
+# android
+android-admin/.gradle/
+android-admin/app/build/
+android-admin/local.properties
+android-admin/keystore/*.jks
+android-admin/keystore/*.keystore
+
+# design runs / local preview
+ui-design-runs/
+*.iml
+.DS_Store

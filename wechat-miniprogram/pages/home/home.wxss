@@ -1,0 +1,38 @@
+.topline { display: flex; justify-content: space-between; align-items: flex-start; padding: 10rpx 4rpx 24rpx; }
+.eyebrow { font-size: 18rpx; letter-spacing: 3rpx; color: #155EEF; font-weight: 700; }
+.hello { font-size: 40rpx; font-weight: 700; margin-top: 8rpx; letter-spacing: -1rpx; }
+.mode-pill { font-size: 20rpx; color: #7A869A; background: #FFFFFF; border: 2rpx solid #E6ECF7; border-radius: 999rpx; padding: 8rpx 16rpx; }
+.hero-track { height: 8rpx; background: rgba(255,255,255,0.18); border-radius: 999rpx; margin-top: 22rpx; overflow: hidden; }
+.hero-fill { height: 8rpx; background: #FFFFFF; border-radius: 999rpx; }
+.hero-foot { display: flex; justify-content: space-between; margin-top: 12rpx; font-size: 20rpx; color: rgba(255,255,255,0.72); }
+.quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12rpx; margin-top: 18rpx; }
+.quick { background: #FFFFFF; border-radius: 18rpx; padding: 20rpx 12rpx; text-align: center; box-shadow: 0 8rpx 20rpx rgba(18,43,89,0.04); }
+.quick-icon { width: 44rpx; height: 44rpx; line-height: 44rpx; margin: 0 auto 10rpx; border-radius: 12rpx; background: #EAF0FF; color: #155EEF; font-size: 24rpx; font-weight: 700; }
+.quick-title { font-size: 24rpx; font-weight: 700; }
+.quick-sub { font-size: 18rpx; color: #9AA6BB; margin-top: 4rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.progress-card { padding: 24rpx 24rpx 18rpx; }
+.progress-top { display: flex; justify-content: space-between; align-items: center; }
+.node-scroll { margin-top: 20rpx; white-space: nowrap; }
+.node-strip { display: flex; gap: 10rpx; padding-bottom: 4rpx; }
+.node-mini { width: 112rpx; flex: none; text-align: center; }
+.node-dot { width: 50rpx; height: 50rpx; line-height: 50rpx; border-radius: 50%; margin: 0 auto; background: #F0F3F8; color: #9AA6BB; font-size: 20rpx; font-weight: 700; }
+.node-dot.done { background: #155EEF; color: #FFFFFF; }
+.node-dot.now { background: #FFF3E4; color: #B45309; border: 2rpx solid #E67E22; }
+.node-name { font-size: 20rpx; color: #52627C; margin-top: 8rpx; white-space: nowrap; }
+.expense-row { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid #EEF2F9; }
+.expense-row:last-child { border-bottom: none; }
+.expense-cat { width: 112rpx; flex: none; font-size: 22rpx; color: #155EEF; font-weight: 600; }
+.expense-note { font-size: 26rpx; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.expense-amount { font-size: 28rpx; font-weight: 700; margin-left: 12rpx; }
+.issue-row { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid #EEF2F9; }
+.issue-row:last-child { border-bottom: none; }
+.issue-body { padding: 0 16rpx; }
+.issue-title { font-size: 26rpx; font-weight: 600; line-height: 1.4; }
+.arrow { color: #9AA6BB; font-size: 30rpx; }
+.ad-arrow { color: #9AA6BB; font-size: 28rpx; }
+.stats-entry {
+  margin-top: 28rpx; background: #FFFFFF; border-radius: 24rpx; padding: 26rpx 28rpx;
+  display: flex; justify-content: space-between; align-items: center;
+  border-left: 8rpx solid #155EEF;
+}
+.stats-arrow { font-size: 42rpx; color: #155EEF; font-weight: 700; }

@@ -1,0 +1,37 @@
+<view class="page page-safe">
+  <view class="eyebrow">CONTRACTS</view>
+  <view class="title">合同付款</view>
+  <view class="muted">合同总额、已付、待付和节点进度，一眼看清。</view>
+
+  <view class="summary-row">
+    <view class="summary-cell">
+      <view class="tiny">合同总额</view>
+      <view class="summary-value">{{totalText}}</view>
+    </view>
+    <view class="summary-cell">
+      <view class="tiny">已付</view>
+      <view class="summary-value">{{paidText}}</view>
+    </view>
+    <view class="summary-cell">
+      <view class="tiny">待付</view>
+      <view class="summary-value orange">{{pendingText}}</view>
+    </view>
+  </view>
+
+  <view class="card contract-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
+    <view class="row between">
+      <view class="flex1">
+        <view class="title-sm">{{item.name}}</view>
+        <view class="tiny">{{item.id}} · {{item.status}}</view>
+      </view>
+      <view class="contract-pct">{{item.percent}}%</view>
+    </view>
+    <view class="bar" style="margin-top:16rpx"><view style="width:{{item.percent}}%"></view></view>
+    <view class="row between contract-foot">
+      <text class="tiny">已付 {{item.paidText}} / {{item.totalText}}</text>
+      <text class="tiny">节点 {{item.nodesDone}}/{{item.nodesTotal}}</text>
+    </view>
+    <view class="pending-pill">待付 {{item.pendingText}}</view>
+  </view>
+  <view class="empty" wx:if="{{!items.length}}">还没有合同</view>
+</view>

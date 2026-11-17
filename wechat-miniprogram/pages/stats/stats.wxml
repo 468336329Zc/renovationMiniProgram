@@ -1,0 +1,58 @@
+<view class="page page-safe">
+  <view class="eyebrow">MONEY MAP</view>
+  <view class="title">费用统计</view>
+  <view class="muted">预算、分类构成和月度支出，决定下一步把钱花在哪。</view>
+
+  <view class="stat-hero">
+    <view class="row between">
+      <view>
+        <view class="stat-label">累计支出</view>
+        <view class="stat-value">{{spentText}}</view>
+      </view>
+      <view class="budget-pill">预算 {{budgetText}}</view>
+    </view>
+    <view class="bar white" style="margin-top:20rpx"><view style="width:{{usedPct}}%"></view></view>
+    <view class="row between stat-foot">
+      <text>已用 {{usedPctText}}</text>
+      <text>可用 {{availableText}}</text>
+    </view>
+  </view>
+
+  <view class="section-head"><view class="title-sm">费用构成</view><view class="tiny">按分类</view></view>
+  <view class="card">
+    <view class="cat-row" wx:for="{{categories}}" wx:key="label">
+      <view class="cat-line">
+        <view class="cat-name">{{item.label}}</view>
+        <view class="cat-amount">{{item.amountText}}</view>
+      </view>
+      <view class="bar"><view style="width:{{item.pct}}%"></view></view>
+      <view class="tiny cat-pct">{{item.pctText}}</view>
+    </view>
+    <view class="empty" wx:if="{{!categories.length}}">还没有支出数据</view>
+  </view>
+
+  <view class="section-head"><view class="title-sm">月度趋势</view><view class="tiny">近几个月</view></view>
+  <view class="card chart-card">
+    <view class="month-chart">
+      <view class="month-col" wx:for="{{monthly}}" wx:key="label">
+        <view class="month-bar-wrap"><view class="month-bar" style="height:{{item.height}}%"></view></view>
+        <view class="month-value">{{item.short}}</view>
+        <view class="month-label">{{item.month}}</view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!monthly.length}}">还没有月度数据</view>
+  </view>
+
+  <view class="export-card" bindtap="goExport">
+    <view>
+      <view class="title-sm">导出完整报表</view>
+      <view class="tiny">看一次激励视频解锁，服务端校验后签发导出凭证。</view>
+    </view>
+    <view class="export-arrow">↗</view>
+  </view>
+
+  <view class="ad-slot">
+    <view class="ad-tag">广告</view>
+    <view class="ad-copy">广告只放在页面底部和导出解锁处，不挡记账、进度和合同操作。</view>
+  </view>
+</view>
