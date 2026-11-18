@@ -17,7 +17,7 @@ import java.util.Map;
 /** 本地演示数据库：管理员端不直连 MySQL，正式版由 Flask API 提供数据。 */
 final class Db extends SQLiteOpenHelper {
     private static final String NAME = "renovation_admin.db";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     private static Db instance;
     private final Context context;
 

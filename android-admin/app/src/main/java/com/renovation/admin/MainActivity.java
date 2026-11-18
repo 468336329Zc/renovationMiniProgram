@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -36,6 +37,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            setup();
+        } catch (Throwable e) {
+            showCrash(e);
+        }
+    }
+
+    private void setup() {
         db = Db.get(this);
         getWindow().setStatusBarColor(Ui.BG);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
@@ -741,4 +750,15 @@ public class MainActivity extends Activity {
     private int levelBg(String level) {
         return "高".equals(level) ? Ui.RED_SOFT : ("中".equals(level) ? Ui.ORANGE_SOFT : Color.parseColor("#EEF2F9"));
     }
+    private void showCrash(Throwable e) {
+        ScrollView crashScroll = new ScrollView(this);
+        TextView crashText = new TextView(this);
+        crashText.setText("管理台启动失败\n\n" + Log.getStackTraceString(e));
+        crashText.setTextSize(12);
+        crashText.setTextIsSelectable(true);
+        crashText.setPadding(Ui.dp(this, 18), Ui.dp(this, 24), Ui.dp(this, 18), Ui.dp(this, 24));
+        crashScroll.addView(crashText);
+        setContentView(crashScroll);
+    }
+
 }

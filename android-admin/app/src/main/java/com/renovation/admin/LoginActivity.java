@@ -77,8 +77,13 @@ public class LoginActivity extends Activity {
             String code = password.getText().toString().trim();
             if (p.isEmpty()) { Toast.makeText(this, "请输入手机号", Toast.LENGTH_SHORT).show(); return; }
             if (!"admin123".equals(code)) { Toast.makeText(this, "演示密码为 admin123", Toast.LENGTH_SHORT).show(); return; }
+            try {
+                Db.get(this).addAudit("A-01", "admin.login", "管理员登录管理台");
+            } catch (Throwable e) {
+                Toast.makeText(this, "本地数据库初始化失败：" + e.getMessage(), Toast.LENGTH_LONG).show();
+                return;
+            }
             sp.edit().putBoolean("logged_in", true).putString("admin_name", "张川").apply();
-            Db.get(this).addAudit("A-01", "admin.login", "管理员登录管理台");
             startActivity(new Intent(this, MainActivity.class));
             finish();
         });
