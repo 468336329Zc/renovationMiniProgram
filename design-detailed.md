@@ -1,7 +1,7 @@
 # 装修记 · 详细设计
 
 > 本文件是最新详细设计基线，必须与当前代码保持一致。任何涉及表结构、接口、页面、类、关键流程的改动，必须同步修改本文件。
-> 对应版本：`v1.0.20`；需求见 `requirements.md`，架构见 `design-overview.md`。
+> 对应版本：`v1.0.21`；需求见 `requirements.md`，架构见 `design-overview.md`。
 
 ## 1. 数据库设计
 
@@ -229,7 +229,7 @@ LoginActivity.onCreate
 
 ## 5. 构建与签名
 
-- `android-admin/app/build.gradle`：`versionCode 20`、`versionName "1.0.20"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- `android-admin/app/build.gradle`：`versionCode 21`、`versionName "1.0.21"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - 本地构建需要 JDK 17（Gradle 8.7 + AGP 8.5.2）；Android SDK 位于 `/home/user/android-sdk`，`local.properties` 已写 `sdk.dir`。
 - 固定证书 SHA-256：`6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - GitHub Actions：`.github/workflows/android-release.yml`；Secrets：
@@ -264,12 +264,22 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 | 用户被停用 | 登录 403；已有 refresh token 吊销 |
 | 广告位关闭 | 小程序不展示；上报返回 403；管理端统计仍保留历史 |
 
-## 7. 验证清单（v1.0.20）
+## 7. 管理端排版约束（v1.0.21）
+
+- Hero 改为内容区内圆角深色块，取消负边距全出血，左右内边距 18dp；标题、主数字、右侧两项统计、三列 KPI、底部日期/版本分层排布。
+- 主数字使用 44sp、关闭字体额外内边距，标签与数字之间保留 5dp；右侧统计改为“数值在上、标签在下”的两行结构，宽度固定 104dp，避免横向挤压。
+- 底部轴信息拆成三等分：日期左对齐、数据源居中、版本右对齐，单行不换行。
+- 分区标题顶部 25dp、底部 12dp，并设最小高度 27dp，卡片不再顶住标题。
+- 预算排行：排名使用 27dp 浅蓝编号块；行内左右各 13dp；金额列固定 82dp、右对齐、12sp 单行，不再被卡片边界切断。
+- 用户/合同列表同样采用固定金额列与单行省略，列表左右各 14dp，避免金额、长项目名越界。
+
+## 8. 验证清单（v1.0.21）
 
 - [x] 服务端 Python `py_compile` 通过。
 - [x] 小程序 `node --check` 通过（data/ads/login/home/expenses/progress/stats/export/app）。
 - [x] Android `compileReleaseJavaWithJavac` 通过。
-- [x] Android `assembleRelease` 产出 `v1.0.20`，`apksigner` 证书 SHA-256 与基线一致。
+- [x] Android `assembleRelease` 产出 `v1.0.21`，`apksigner` 证书 SHA-256 与基线一致。
 - [ ] MySQL 端到端联调（本机 MySQL 未启动）。
 - [ ] 真机安装/启动/远程登录验证（需设备与服务端地址）。
 - [ ] 微信真实 AppID/AppSecret 与 HTTPS 合法域名验证。
+- [ ] 真机复核首页 Hero、统计页预算 Top 5 在 360–430dp 宽度下无裁切、无标题压卡片、金额右对齐。

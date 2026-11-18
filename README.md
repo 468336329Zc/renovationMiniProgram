@@ -10,7 +10,7 @@
 | Android 管理端 | `android-admin/` | Android 原生 Java，APK；本地演示库 + 服务端 MySQL 镜像双数据源 |
 | 服务端 | `server/` | Flask + PyMySQL，唯一数据库入口 |
 
-当前版本：**v1.0.20**（2026-11-18）。
+当前版本：**v1.0.21**（2026-11-18）。
 
 - 需求基线：[`requirements.md`](requirements.md)
 - 概要设计：[`design-overview.md`](design-overview.md)

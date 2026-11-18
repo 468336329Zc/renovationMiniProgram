@@ -111,7 +111,7 @@ public class LoginActivity extends Activity {
         note.addView(Ui.text(this, "本地演示账号只读本地 SQLite 演示数据；其他账号登录后从 Flask API 同步服务端 MySQL 快照，管理端不保存数据库账号或 MySQL 密码。", 11, false, Ui.MUTED));
         root.addView(note);
 
-        TextView footer = Ui.text(this, "RENOVATION · CONTROL DESK  /  v1.0.20", 9, true, Color.parseColor("#9AA6BD"));
+        TextView footer = Ui.text(this, "RENOVATION · CONTROL DESK  /  v1.0.21", 9, true, Color.parseColor("#9AA6BD"));
         footer.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams footerLp = Ui.matchWrap(this);
         footerLp.topMargin = Ui.dp(this, 22);

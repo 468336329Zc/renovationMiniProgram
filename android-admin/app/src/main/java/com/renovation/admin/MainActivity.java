@@ -9,6 +9,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
@@ -280,12 +281,10 @@ public class MainActivity extends Activity {
     private View buildHero(int totalUsers, int newUsers, int activeUsers, double budget,
                            double contractTotal, int projects, int stalled) {
         LinearLayout hero = Ui.column(this);
-        hero.setPadding(dp(20), dp(16), dp(20), dp(13));
-        hero.setBackgroundColor(Ui.NAVY);
+        hero.setPadding(dp(18), dp(17), dp(18), dp(15));
+        hero.setBackground(Ui.rounded(Ui.NAVY, dp(14), Color.TRANSPARENT, 0));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.leftMargin = dp(-20);
-        lp.rightMargin = dp(-20);
-        lp.bottomMargin = dp(14);
+        lp.bottomMargin = dp(6);
         hero.setLayoutParams(lp);
 
         LinearLayout top = Ui.row(this);
@@ -293,14 +292,14 @@ public class MainActivity extends Activity {
         View green = new View(this);
         green.setBackground(Ui.rounded(Color.parseColor("#5EE0B0"), dp(2), Color.TRANSPARENT, 0));
         live.addView(green, new LinearLayout.LayoutParams(dp(5), dp(5)));
-        TextView liveText = Ui.mono(this, "OVERVIEW / 管理快照", 9, true, Color.parseColor("#A9C1F2"));
+        TextView liveText = Ui.mono(this, "OVERVIEW / 管理快照", 8.5f, true, Color.parseColor("#A9C1F2"));
         liveText.setLetterSpacing(0.1f);
         LinearLayout.LayoutParams liveLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         liveLp.leftMargin = dp(7);
         liveText.setLayoutParams(liveLp);
         live.addView(liveText);
         top.addView(live, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        TextView refresh = Ui.text(this, "刷新 ›", 10, true, Color.parseColor("#DCE7FF"));
+        TextView refresh = Ui.text(this, "刷新 ›", 9.5f, true, Color.parseColor("#DCE7FF"));
         refresh.setPadding(dp(9), dp(5), dp(9), dp(5));
         refresh.setBackground(Ui.rounded(Color.TRANSPARENT, dp(6), Color.parseColor("#3D5A8F"), dp(1)));
         refresh.setOnClickListener(v -> toast("已刷新：全量数据更新于 " + timeNow()));
@@ -310,68 +309,121 @@ public class MainActivity extends Activity {
         LinearLayout main = Ui.row(this);
         main.setGravity(Gravity.BOTTOM);
         LinearLayout.LayoutParams mainLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        mainLp.topMargin = dp(18);
+        mainLp.topMargin = dp(19);
         main.setLayoutParams(mainLp);
         LinearLayout numBox = Ui.column(this);
         numBox.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        numBox.addView(Ui.text(this, "累计用户", 10, false, Ui.HERO_MUTED));
+        TextView label = Ui.text(this, "累计用户", 9.5f, false, Ui.HERO_MUTED);
+        label.setLetterSpacing(0.04f);
+        numBox.addView(label);
         LinearLayout numLine = Ui.row(this);
         numLine.setGravity(Gravity.BOTTOM);
-        numLine.addView(Ui.mono(this, formatInt(totalUsers), 48, true, Color.WHITE));
-        TextView unit = Ui.text(this, "位用户", 10, false, Ui.HERO_MUTED);
-        unit.setPadding(dp(6), 0, 0, dp(8));
+        LinearLayout.LayoutParams numLineLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        numLineLp.topMargin = dp(5);
+        numLine.setLayoutParams(numLineLp);
+        TextView number = Ui.mono(this, formatInt(totalUsers), 44, true, Color.WHITE);
+        number.setIncludeFontPadding(false);
+        number.setLineSpacing(0, 1f);
+        numLine.addView(number);
+        TextView unit = Ui.text(this, "位用户", 9.5f, false, Ui.HERO_MUTED);
+        unit.setPadding(dp(7), 0, 0, dp(10));
         numLine.addView(unit);
         numBox.addView(numLine);
         main.addView(numBox);
 
         LinearLayout note = Ui.column(this);
         note.setGravity(Gravity.RIGHT);
-        note.setLayoutParams(new LinearLayout.LayoutParams(dp(140), ViewGroup.LayoutParams.WRAP_CONTENT));
-        note.addView(heroNote(String.valueOf(newUsers), " 本月新增"));
-        note.addView(heroNote(String.valueOf(activeUsers), " 近 30 天活跃"));
+        note.setPadding(0, 0, 0, dp(2));
+        note.setLayoutParams(new LinearLayout.LayoutParams(dp(104), ViewGroup.LayoutParams.WRAP_CONTENT));
+        note.addView(heroStat(String.valueOf(newUsers), "本月新增"));
+        LinearLayout.LayoutParams noteLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        noteLp.topMargin = dp(10);
+        View second = heroStat(String.valueOf(activeUsers), "近 30 天活跃");
+        second.setLayoutParams(noteLp);
+        note.addView(second);
         main.addView(note);
         hero.addView(main);
 
+        View rule = new View(this);
+        rule.setBackgroundColor(Color.parseColor("#263A59"));
+        LinearLayout.LayoutParams ruleLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+        ruleLp.topMargin = dp(15);
+        rule.setLayoutParams(ruleLp);
+        hero.addView(rule);
+
         LinearLayout kpis = Ui.row(this);
         LinearLayout.LayoutParams kpisLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        kpisLp.topMargin = dp(14);
+        kpisLp.topMargin = dp(12);
         kpis.setLayoutParams(kpisLp);
         kpis.addView(heroKpi("预算总额", compactMoney(budget), "人均 " + shortMoney(totalUsers == 0 ? 0 : budget / totalUsers), false));
+        kpis.addView(heroDivide());
         kpis.addView(heroKpi("合同总额", compactMoney(contractTotal), db.contracts(null).size() + " 份合同", false));
+        kpis.addView(heroDivide());
         kpis.addView(heroKpi("在管项目", String.valueOf(projects), stalled + " 个停滞", stalled > 0));
         hero.addView(kpis);
 
         LinearLayout axis = Ui.row(this);
         LinearLayout.LayoutParams axisLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        axisLp.topMargin = dp(12);
+        axisLp.topMargin = dp(13);
         axis.setLayoutParams(axisLp);
-        axis.addView(Ui.mono(this, todayAxis(), 10, true, Color.parseColor("#A7BFEA")));
-        TextView source = Ui.mono(this, Session.demo ? "本地演示" : "服务端数据", 10, false, Ui.HERO_DIM);
+        TextView date = Ui.mono(this, todayAxis(), 8.5f, true, Color.parseColor("#A7BFEA"));
+        date.setSingleLine(true);
+        date.setGravity(Gravity.START);
+        date.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        axis.addView(date);
+        TextView source = Ui.mono(this, Session.demo ? "本地演示" : "服务端数据", 8.5f, false, Ui.HERO_DIM);
+        source.setSingleLine(true);
         source.setGravity(Gravity.CENTER);
         source.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         axis.addView(source);
-        axis.addView(Ui.mono(this, "v" + appVersionName(), 10, false, Ui.HERO_DIM));
+        TextView version = Ui.mono(this, "v" + appVersionName(), 8.5f, false, Ui.HERO_DIM);
+        version.setSingleLine(true);
+        version.setGravity(Gravity.END);
+        version.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        axis.addView(version);
         hero.addView(axis);
         return hero;
     }
 
-    private View heroNote(String value, String label) {
-        LinearLayout row = Ui.row(this);
-        row.setGravity(Gravity.RIGHT);
-        row.addView(Ui.mono(this, value, 11, true, Color.WHITE));
-        row.addView(Ui.text(this, label, 10.5f, false, Color.parseColor("#C7D6F2")));
-        return row;
+    private View heroStat(String value, String label) {
+        LinearLayout box = Ui.column(this);
+        box.setGravity(Gravity.RIGHT);
+        TextView number = Ui.mono(this, value, 15, true, Color.parseColor("#F5F8FF"));
+        number.setIncludeFontPadding(false);
+        number.setGravity(Gravity.RIGHT);
+        box.addView(number);
+        TextView text = Ui.text(this, label, 9, false, Color.parseColor("#B9C9E6"));
+        text.setSingleLine(true);
+        text.setGravity(Gravity.RIGHT);
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        textLp.topMargin = dp(2);
+        text.setLayoutParams(textLp);
+        box.addView(text);
+        return box;
+    }
+
+    private View heroDivide() {
+        View line = new View(this);
+        line.setBackgroundColor(Color.parseColor("#263A59"));
+        line.setLayoutParams(new LinearLayout.LayoutParams(dp(1), dp(31)));
+        return line;
     }
 
     private View heroKpi(String label, String value, String sub, boolean warn) {
         LinearLayout box = Ui.column(this);
-        box.setPadding(dp(10), 0, 0, 0);
+        box.setPadding(dp(12), 0, dp(6), 0);
         box.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        box.addView(Ui.text(this, label, 9, false, Color.parseColor("#8FA9D6")));
-        TextView number = Ui.mono(this, value, 16, true, Color.parseColor("#F5F8FF"));
-        number.setPadding(0, dp(3), 0, 0);
+        box.addView(Ui.text(this, label, 8.5f, false, Color.parseColor("#8FA9D6")));
+        TextView number = Ui.mono(this, value, 14.5f, true, Color.parseColor("#F5F8FF"));
+        number.setIncludeFontPadding(false);
+        number.setSingleLine(true);
+        LinearLayout.LayoutParams numLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        numLp.topMargin = dp(4);
+        number.setLayoutParams(numLp);
         box.addView(number);
-        box.addView(Ui.mono(this, sub, 9, false, warn ? Color.parseColor("#FFB37F") : Color.parseColor("#8FA9D6")));
+        TextView subText = Ui.mono(this, sub, 8.5f, false, warn ? Color.parseColor("#FFB37F") : Color.parseColor("#8FA9D6"));
+        subText.setSingleLine(true);
+        box.addView(subText);
         return box;
     }
 
@@ -488,20 +540,39 @@ public class MainActivity extends Activity {
         for (Db.User user : users) {
             if (shown++ >= limit) break;
             LinearLayout row = Ui.row(this);
-            row.setPadding(0, dp(10), 0, dp(10));
+            row.setPadding(dp(13), dp(13), dp(13), dp(13));
             row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            TextView rank = Ui.mono(this, String.format(Locale.CHINA, "%02d", shown), 10, true, Ui.BLUE);
-            rank.setLayoutParams(new LinearLayout.LayoutParams(dp(24), ViewGroup.LayoutParams.WRAP_CONTENT));
+            TextView rank = Ui.mono(this, String.format(Locale.CHINA, "%02d", shown), 9.5f, true, Ui.BLUE);
+            rank.setGravity(Gravity.CENTER);
+            rank.setBackground(Ui.rounded(Ui.BLUE_SOFT, dp(7), Color.TRANSPARENT, 0));
+            rank.setLayoutParams(new LinearLayout.LayoutParams(dp(27), dp(27)));
             row.addView(rank);
             LinearLayout main = Ui.column(this);
-            main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            main.addView(Ui.text(this, user.name + " · " + user.projectName, 11.5f, true, Ui.INK));
-            main.addView(Ui.text(this, user.city + " · " + user.method + (includeSpent ? " · 已支出 " + shortMoney(user.spent) : ""), 9.5f, false, Ui.MUTED));
+            LinearLayout.LayoutParams mainLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+            mainLp.leftMargin = dp(10);
+            mainLp.rightMargin = dp(10);
+            main.setLayoutParams(mainLp);
+            TextView title = Ui.text(this, user.name + " · " + user.projectName, 11.5f, true, Ui.INK);
+            title.setSingleLine(true);
+            title.setEllipsize(TextUtils.TruncateAt.END);
+            main.addView(title);
+            TextView sub = Ui.text(this, user.city + " · " + user.method + (includeSpent ? " · 已支出 " + shortMoney(user.spent) : ""), 9.5f, false, Ui.MUTED);
+            sub.setSingleLine(true);
+            sub.setEllipsize(TextUtils.TruncateAt.END);
+            LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            subLp.topMargin = dp(2);
+            sub.setLayoutParams(subLp);
+            main.addView(sub);
             row.addView(main);
-            row.addView(Ui.mono(this, shortMoney(user.budget), 11, true, Ui.INK));
+            TextView budget = Ui.mono(this, shortMoney(user.budget), 12, true, Ui.INK);
+            budget.setGravity(Gravity.RIGHT);
+            budget.setSingleLine(true);
+            budget.setIncludeFontPadding(false);
+            budget.setLayoutParams(new LinearLayout.LayoutParams(dp(82), ViewGroup.LayoutParams.WRAP_CONTENT));
+            row.addView(budget);
             row.setOnClickListener(v -> openUser(user));
             block.addView(row);
-            block.addView(Ui.divider(this));
+            if (shown < Math.min(limit, users.size())) block.addView(Ui.divider(this));
         }
         if (users.isEmpty()) block.addView(emptyText("还没有用户预算数据"));
         return block;
@@ -661,7 +732,7 @@ public class MainActivity extends Activity {
         boolean stalled = db.stalled(user.id);
         boolean disabled = "停用".equals(user.status);
         LinearLayout row = Ui.row(this);
-        row.setPadding(0, dp(13), 0, dp(13));
+        row.setPadding(dp(14), dp(14), dp(14), dp(14));
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         row.setAlpha(disabled ? 0.62f : 1f);
 
@@ -692,7 +763,13 @@ public class MainActivity extends Activity {
             nameLine.addView(stall);
         }
         main.addView(nameLine);
-        main.addView(Ui.text(this, user.projectName + " · " + user.city + " · " + maskPhone(user.phone), 10, false, Ui.MUTED));
+        TextView project = Ui.text(this, user.projectName + " · " + user.city + " · " + maskPhone(user.phone), 10, false, Ui.MUTED);
+        project.setSingleLine(true);
+        project.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams projectLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        projectLp.topMargin = dp(2);
+        project.setLayoutParams(projectLp);
+        main.addView(project);
 
         LinearLayout track = Ui.row(this);
         track.setBackground(Ui.rounded(Color.parseColor("#E8EDF5"), dp(2), Color.TRANSPARENT, 0));
@@ -723,9 +800,11 @@ public class MainActivity extends Activity {
 
         LinearLayout right = Ui.column(this);
         right.setGravity(Gravity.RIGHT);
-        right.setLayoutParams(new LinearLayout.LayoutParams(dp(68), ViewGroup.LayoutParams.WRAP_CONTENT));
-        TextView budget = Ui.mono(this, shortMoney(user.budget), 13, true, Ui.INK);
+        right.setLayoutParams(new LinearLayout.LayoutParams(dp(84), ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView budget = Ui.mono(this, shortMoney(user.budget), 12, true, Ui.INK);
         budget.setGravity(Gravity.RIGHT);
+        budget.setSingleLine(true);
+        budget.setIncludeFontPadding(false);
         right.addView(budget);
         TextView budgetLabel = Ui.text(this, "预算", 9.5f, false, Ui.MUTED);
         budgetLabel.setGravity(Gravity.RIGHT);
@@ -848,7 +927,7 @@ public class MainActivity extends Activity {
         boolean pending = contract.total > contract.paid;
         boolean overdue = "风险".equals(contract.status) || "逾期".equals(contract.status);
         LinearLayout row = Ui.row(this);
-        row.setPadding(0, dp(11), 0, dp(11));
+        row.setPadding(dp(14), dp(13), dp(14), dp(13));
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout main = Ui.column(this);
         main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
@@ -864,9 +943,15 @@ public class MainActivity extends Activity {
         main.addView(title);
         main.addView(Ui.text(this, contract.userName + " · " + contract.status + " · 节点 " + contract.nodesDone + "/" + contract.nodesTotal, 9.5f, false, Ui.MUTED));
         row.addView(main);
+        main.setPadding(0, 0, dp(10), 0);
         LinearLayout side = Ui.column(this);
         side.setGravity(Gravity.RIGHT);
-        side.addView(Ui.mono(this, shortMoney(pending ? contract.getPending() : contract.paid), 11, true, Ui.INK));
+        side.setLayoutParams(new LinearLayout.LayoutParams(dp(88), ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView amount = Ui.mono(this, shortMoney(pending ? contract.getPending() : contract.paid), 11.5f, true, Ui.INK);
+        amount.setGravity(Gravity.RIGHT);
+        amount.setSingleLine(true);
+        amount.setIncludeFontPadding(false);
+        side.addView(amount);
         TextView label = Ui.text(this, pending ? "待付" : "已付", 9.5f, false, Ui.MUTED);
         label.setGravity(Gravity.RIGHT);
         side.addView(label);
@@ -963,11 +1048,18 @@ public class MainActivity extends Activity {
             col.setPadding(dp(i == 0 ? 12 : 8), 0, dp(8), 0);
             col.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
             col.addView(Ui.text(this, items[i][0], 9, false, Ui.MUTED));
-            TextView value = Ui.mono(this, items[i][1], 16, true, Ui.INK);
-            value.setPadding(0, dp(2), 0, 0);
+            TextView value = Ui.mono(this, items[i][1], 14.5f, true, Ui.INK);
+            value.setIncludeFontPadding(false);
+            value.setSingleLine(true);
+            LinearLayout.LayoutParams valueLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            valueLp.topMargin = dp(4);
+            value.setLayoutParams(valueLp);
             col.addView(value);
             TextView sub = Ui.mono(this, items[i][2], 9, false, Ui.MUTED);
             sub.setMaxLines(1);
+            LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            subLp.topMargin = dp(2);
+            sub.setLayoutParams(subLp);
             col.addView(sub);
             strip.addView(col);
         }
@@ -1461,7 +1553,7 @@ public class MainActivity extends Activity {
 
     private View infoActionRow(String title, String sub, String action, Runnable onClick, boolean primary) {
         LinearLayout row = Ui.row(this);
-        row.setPadding(0, dp(11), 0, dp(11));
+        row.setPadding(dp(14), dp(13), dp(14), dp(13));
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout main = Ui.column(this);
         main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
@@ -2127,9 +2219,10 @@ public class MainActivity extends Activity {
             row.addView(metaView);
         }
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = dp(18);
-        lp.bottomMargin = dp(9);
+        lp.topMargin = dp(25);
+        lp.bottomMargin = dp(12);
         row.setLayoutParams(lp);
+        row.setMinimumHeight(dp(27));
         content.addView(row);
     }
 

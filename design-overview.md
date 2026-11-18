@@ -1,7 +1,7 @@
 # 装修记 · 概要设计
 
 > 本文件是最新概要设计基线。任何涉及架构、模块边界、数据流、部署方式的变化，必须同步更新本文件。
-> 对应版本：`v1.0.20`；需求基线见 `requirements.md`。
+> 对应版本：`v1.0.21`；需求基线见 `requirements.md`。
 
 ## 1. 系统组成
 
@@ -133,7 +133,7 @@ Android 广告效果：按 slot 汇总 + 点击用户排行 + 点击明细
 - 服务端：Flask + Gunicorn + PyMySQL；MySQL 8.0/MariaDB 10.6；`python scripts/apply_schema.py --seed` 建表与种子，`003_ad_events.sql` 随脚本执行。
 - 小程序：微信开发者工具导入，配置 `BASE_URL` 为已备案 HTTPS 域名与 request 合法域名。
 - Android：GitHub Actions（JDK 17 + Android SDK 34）构建；GitHub Secrets 注入固定 keystore；Release 资产为 APK。
-- 版本：`v1.0.20`，固定证书 SHA-256 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- 版本：`v1.0.21`，固定证书 SHA-256 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 
 ## 7. 已知边界
 
