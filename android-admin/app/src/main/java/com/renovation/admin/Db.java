@@ -22,7 +22,7 @@ final class Db extends SQLiteOpenHelper {
     static final String[] AD_SLOT_KEYS = {"home_banner", "expenses_feed", "progress_feed", "stats_feed", "export_rewarded", "export_feed"};
     static final String[] AD_SLOT_NAMES = {"首页 Banner", "记账页信息流", "进度页信息流", "统计页信息流", "导出页激励视频", "导出页底部 Banner"};
     static final double[] AD_SLOT_ECPM = {68, 42, 38, 36, 120, 58};
-    private static final int VERSION = 3;
+    private static final int VERSION = 4;
     private static Db demoInstance;
     private static Db remoteInstance;
     private final Context context;
@@ -219,10 +219,10 @@ final class Db extends SQLiteOpenHelper {
         setting(db, "export", "true");
         setting(db, "maintenance", "false");
 
-        // 本地演示广告事件：六个广告位各 10 次曝光，另生成 30 次点击，供广告效果页演示。
+        // 本地演示广告事件：六个广告位各 600 次曝光，另生成 60 次点击，点击率约 1.7%。
         String[] adUsers = {"U-1001", "U-1002", "U-1003", "U-1005", "U-1006", "U-1007", "U-1008", "U-1009", "U-1010", "U-1011", "U-1012", "U-1001"};
         for (int slotIndex = 0; slotIndex < AD_SLOT_KEYS.length; slotIndex++) {
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 600; i++) {
                 ContentValues v = new ContentValues();
                 v.put("user_id", adUsers[(slotIndex + i) % adUsers.length]);
                 v.put("slot_key", AD_SLOT_KEYS[slotIndex]);
@@ -233,7 +233,7 @@ final class Db extends SQLiteOpenHelper {
                 db.insert("ad_events", null, v);
             }
         }
-        int clickCount = 30;
+        int clickCount = 60;
         for (int i = 0; i < clickCount; i++) {
             ContentValues v = new ContentValues();
             v.put("user_id", adUsers[i % adUsers.length]);

@@ -39,7 +39,7 @@ final class Ui {
     static final int HERO_DIM = Color.parseColor("#7089B6");
     static final int HERO_LINE = Color.parseColor("#333F5D");
     static final String SANS = "sans-serif";
-    static final String MONO = "monospace";
+    private static Typeface monoBase;
 
     private Ui() {}
 
@@ -59,7 +59,14 @@ final class Ui {
 
     static TextView mono(Context c, String value, float size, boolean bold, int color) {
         TextView view = text(c, value, size, bold, color);
-        view.setTypeface(Typeface.create(MONO, bold ? Typeface.BOLD : Typeface.NORMAL));
+        if (monoBase == null) {
+            try {
+                monoBase = Typeface.createFromAsset(c.getAssets(), "SpaceGrotesk.ttf");
+            } catch (Exception ignored) {
+                monoBase = Typeface.MONOSPACE;
+            }
+        }
+        view.setTypeface(bold ? Typeface.create(monoBase, Typeface.BOLD) : monoBase);
         return view;
     }
 

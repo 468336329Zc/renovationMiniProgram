@@ -1,7 +1,7 @@
 # 装修记 · 概要设计
 
 > 本文件是最新概要设计基线。任何涉及架构、模块边界、数据流、部署方式的变化，必须同步更新本文件。
-> 对应版本：`v1.0.21`；需求基线见 `requirements.md`。
+> 对应版本：`v1.0.22`；需求基线见 `requirements.md`。
 
 ## 1. 系统组成
 
@@ -59,7 +59,7 @@
 - `GlyphView`：Canvas 线性图标（home/users/contract/stats/shield/sync/download/search/db/lock/right/close）。
 - `TrendChartView`：细网格 + 蓝色渐变面积折线，带首/中/尾日期标签。
 - `ToggleView`：40×23 胶囊开关，用于广告位与导出开关。
-- `MainActivity`：五栏“首页 / 用户 / 合同 / 统计 / 系统”；首页 Hero、快捷入口、现场照片、增长折线、城市与预算排行；用户/合同/统计/系统按原型排布；广告详情为底部弹层，筛选“全部 + 六个广告位”，含点击排行与点击明细。
+- `MainActivity`：五栏“首页 / 用户 / 合同 / 统计 / 系统”；首页为整宽 Hero（自定义 `HeroBackdropView` 画蓝图网格、光晕与校准角标），快捷入口、现场照片、增长折线、城市与预算排行；用户/合同行按 38dp 头像 + 70dp 预算列排布；统计页广告详情为底部弹层，顶部“全部广告位”独占整行、六个广告位两列三行，含广告位表现表、点击排行与点击明细，三者按当前广告位联动。
 - `UserDetailActivity`：用户概览/支出/进度/合同；账号停用、强制下线、删除走本地或服务端。
 
 ## 3. 数据流
@@ -86,7 +86,7 @@ MySQL ad_events
         ↓
 管理端 GET /api/admin/ads?range=30&slot=...
         ↓
-Android 广告效果：按 slot 汇总 + 点击用户排行 + 点击明细
+Android 广告效果：按 slot 汇总 + 广告位表现表 + 点击用户排行 + 点击明细（同一弹层联动）
 ```
 
 ### 3.3 管理端双数据源
@@ -133,7 +133,7 @@ Android 广告效果：按 slot 汇总 + 点击用户排行 + 点击明细
 - 服务端：Flask + Gunicorn + PyMySQL；MySQL 8.0/MariaDB 10.6；`python scripts/apply_schema.py --seed` 建表与种子，`003_ad_events.sql` 随脚本执行。
 - 小程序：微信开发者工具导入，配置 `BASE_URL` 为已备案 HTTPS 域名与 request 合法域名。
 - Android：GitHub Actions（JDK 17 + Android SDK 34）构建；GitHub Secrets 注入固定 keystore；Release 资产为 APK。
-- 版本：`v1.0.21`，固定证书 SHA-256 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- 版本：`v1.0.22`，固定证书 SHA-256 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 
 ## 7. 已知边界
 

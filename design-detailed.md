@@ -1,7 +1,7 @@
 # 装修记 · 详细设计
 
 > 本文件是最新详细设计基线，必须与当前代码保持一致。任何涉及表结构、接口、页面、类、关键流程的改动，必须同步修改本文件。
-> 对应版本：`v1.0.21`；需求见 `requirements.md`，架构见 `design-overview.md`。
+> 对应版本：`v1.0.22`；需求见 `requirements.md`，架构见 `design-overview.md`。
 
 ## 1. 数据库设计
 
@@ -82,7 +82,7 @@
 | GET | `/api/admin/expenses` | `expenses:read` | 支出汇总与明细 |
 | GET | `/api/admin/issues` | `issues:read` | 问题列表（只读） |
 | GET | `/api/admin/analytics?range=7|30|90` | `analytics:read` | 新增、活跃、支出、城市、月度、漏斗、预算排行 |
-| GET | `/api/admin/ads?range=7|30|90&slot=` | `analytics:read` | 广告汇总/分 slot/点击排行/点击明细 |
+| GET | `/api/admin/ads?range=7|30|90&slot=` | `analytics:read` | 广告汇总/分 slot/点击排行/点击明细；管理端按六个 key 分别请求并用广告位表现表校验 |
 | GET | `/api/admin/admins` | `admins:read` | 管理员列表 |
 | POST | `/api/admin/admins` | `admins:write` | 新增管理员 |
 | GET | `/api/admin/settings` | `settings:read` | 系统设置 |
@@ -173,10 +173,11 @@
 | `Session` | `demo`/`token`/`name`/`role`/`baseUrl`；`load/save/clear`；默认 `http://10.0.2.2:5000/api` |
 | `ApiClient` | `GET/POST/PATCH/DELETE`；10s 连接/20s 读取；解析 `{ok,data,error}`；HTTP 非 2xx 抛错 |
 | `RemoteSync` | `login`、`sync`、`patchUser`、`revokeSessions`、`deleteUser`、`updateSettings`；同步 users/contracts/expenses/issues/ads/analytics 到 remote 库；合同/支出/问题按 `project_id` 反查用户 ID |
-| `Db` | 双库；版本 3；建表、种子、用户/合同/支出/节点/问题/广告事件/设置查询；`adSnapshotJson` 生成广告快照 |
-| `MainActivity` | 五栏“首页/用户/合同/统计/系统”；`selectTab` 重建内容；首页 Hero/快捷宫格/照片条/增长/城市/预算排行；广告详情底部弹层（全部 + 六个广告位筛选）；CSV 导出与分享 |
-| `Ui` | 原型色板与组件；卡片默认 MATCH_PARENT；顶栏/底栏/胶囊/按钮/输入框 |
+| `Db` | 双库；版本 4；建表、种子、用户/合同/支出/节点/问题/广告事件/设置查询；`adSnapshotJson` 生成广告快照 |
+| `MainActivity` | 五栏“首页/用户/合同/统计/系统”；`selectTab` 重建内容；首页整宽 Hero/快捷宫格/照片条/增长/城市/预算排行；广告详情底部弹层（全部广告位独占整行 + 六个广告位两列三行，汇总/广告位表现表/点击排行/点击明细联动）；CSV 导出与分享 |
+| `Ui` | 原型色板与组件；卡片默认 MATCH_PARENT；顶栏/底栏/胶囊/按钮/输入框；数字统一使用随包 `assets/SpaceGrotesk.ttf`，中文回退系统无衬线 |
 | `GlyphView` | Canvas 线性图标，避免引入整套图标资源 |
+| `HeroBackdropView` | 首页 Hero 底纹：26dp 蓝图网格、右上电光蓝径向光晕、底部渐隐与四角校准线 |
 | `TrendChartView` | 增长折线：网格、蓝色面积、末点圆点、日期标签 |
 | `ToggleView` | 40×23 胶囊开关，点击切换并回调 |
 | `UserDetailActivity` | 四 Tab；本地/远程数据源切换；停用/启用、强制下线、删除；预算只读 |
@@ -189,7 +190,7 @@
 `users`、`contracts`、`expenses`、`nodes`、`issues`、`admins`、`audits`、`settings`、`ad_events`。
 
 - `ad_events` 字段与 MySQL 对齐：`id, user_id, project_id, slot_key, event_type, creative, page, occurred_at`。
-- 演示库种子：12 用户、16 支出、9 节点、5 问题、4 合同、3 管理员、6 审计、6 广告位各 10 次曝光 + 30 次点击 + 8 次激励完成。
+- 演示库种子：12 用户、16 支出、9 节点、5 问题、4 合同、3 管理员、6 审计、6 广告位各 600 次曝光 + 60 次点击 + 8 次激励完成（点击率约 1.7%）。演示库版本升到 4 后重建，确保旧安装不会再显示“点击多于曝光”的早期样本。
 - 本地广告位开关保存在 `settings.key='ad_slot_<slot>'`，`adSnapshotJson` 读取覆盖默认 `enabled`。
 
 ### 4.3 登录流程
@@ -212,7 +213,7 @@ LoginActivity.onCreate
 - **概览**：总支出 hero、预算执行、用户/合同/问题 KPI、月度趋势、费用构成、待解决问题、最近广告点击。
 - **用户**：搜索/筛选；用户卡片显示预算执行与状态；详情页四 Tab。
 - **合同**：只读台账；总额/已付/待付/节点进度/状态筛选。
-- **首页**：Hero（累计用户 48sp、预算/合同/项目三列、日期轴/数据源/版本）；四宫格快捷入口；三张现场照片；用户增长折线；城市 Top5；预算 Top5；最近注册；待解问题轨标。
+- **首页**：Hero（累计用户 52sp、预算/合同/项目三列、日期轴/数据源/版本）；四宫格快捷入口；三张现场照片；用户增长折线；城市 Top5；预算 Top5；最近注册；待解问题轨标。
 - **用户**：页头、导出按钮、搜索框、全部/正常/已禁用/停滞 chips（实时计数）；用户卡进入 `UserDetailActivity`。
 - **合同**：页头、合同总额/待付/逾期指标条、全部/待付/逾期/已付 chips、合同行、合同品类构成、只读说明。
 - **统计**：7/30/90 分段；四个 KPI；增长折线；预算/支出指标；预算区间分布；费用构成；预算 Top5；城市与装修方式；合同/问题/产品四 KPI；问题级别；内容产出量；六广告位效果卡；数据源/同步/接口/版本。
@@ -229,7 +230,7 @@ LoginActivity.onCreate
 
 ## 5. 构建与签名
 
-- `android-admin/app/build.gradle`：`versionCode 21`、`versionName "1.0.21"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- `android-admin/app/build.gradle`：`versionCode 22`、`versionName "1.0.22"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - 本地构建需要 JDK 17（Gradle 8.7 + AGP 8.5.2）；Android SDK 位于 `/home/user/android-sdk`，`local.properties` 已写 `sdk.dir`。
 - 固定证书 SHA-256：`6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - GitHub Actions：`.github/workflows/android-release.yml`；Secrets：
@@ -264,7 +265,7 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 | 用户被停用 | 登录 403；已有 refresh token 吊销 |
 | 广告位关闭 | 小程序不展示；上报返回 403；管理端统计仍保留历史 |
 
-## 7. 管理端排版约束（v1.0.21）
+## 7. 管理端排版约束（v1.0.22）
 
 - Hero 改为内容区内圆角深色块，取消负边距全出血，左右内边距 18dp；标题、主数字、右侧两项统计、三列 KPI、底部日期/版本分层排布。
 - 主数字使用 44sp、关闭字体额外内边距，标签与数字之间保留 5dp；右侧统计改为“数值在上、标签在下”的两行结构，宽度固定 104dp，避免横向挤压。
@@ -273,12 +274,14 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 - 预算排行：排名使用 27dp 浅蓝编号块；行内左右各 13dp；金额列固定 82dp、右对齐、12sp 单行，不再被卡片边界切断。
 - 用户/合同列表同样采用固定金额列与单行省略，列表左右各 14dp，避免金额、长项目名越界。
 
-## 8. 验证清单（v1.0.21）
+## 8. 验证清单（v1.0.22）
 
 - [x] 服务端 Python `py_compile` 通过。
 - [x] 小程序 `node --check` 通过（data/ads/login/home/expenses/progress/stats/export/app）。
 - [x] Android `compileReleaseJavaWithJavac` 通过。
-- [x] Android `assembleRelease` 产出 `v1.0.21`，`apksigner` 证书 SHA-256 与基线一致。
+- [x] Android `assembleRelease` 产出 `v1.0.22`，`apksigner` 证书 SHA-256 与基线一致。
+- [x] 广告详情可按“全部广告位”和六个具体广告位筛选；广告位表现表、点击排行、点击明细随筛选同步。
+- [x] 首页 Hero 使用整宽底纹与 Space Grotesk 数字；用户行右列 70dp、合同行金额列 96dp，金额不再贴边。
 - [ ] MySQL 端到端联调（本机 MySQL 未启动）。
 - [ ] 真机安装/启动/远程登录验证（需设备与服务端地址）。
 - [ ] 微信真实 AppID/AppSecret 与 HTTPS 合法域名验证。

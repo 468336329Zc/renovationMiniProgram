@@ -280,53 +280,67 @@ public class MainActivity extends Activity {
 
     private View buildHero(int totalUsers, int newUsers, int activeUsers, double budget,
                            double contractTotal, int projects, int stalled) {
-        LinearLayout hero = Ui.column(this);
-        hero.setPadding(dp(18), dp(17), dp(18), dp(15));
-        hero.setBackground(Ui.rounded(Ui.NAVY, dp(14), Color.TRANSPARENT, 0));
+        FrameLayout hero = new FrameLayout(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = dp(6);
+        lp.setMargins(-dp(20), 0, -dp(20), dp(18));
         hero.setLayoutParams(lp);
+        hero.addView(new HeroBackdropView(this), new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout inner = Ui.column(this);
+        inner.setPadding(dp(20), dp(20), dp(20), dp(18));
+        hero.addView(inner, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         LinearLayout top = Ui.row(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout live = Ui.row(this);
+        live.setGravity(Gravity.CENTER_VERTICAL);
         View green = new View(this);
-        green.setBackground(Ui.rounded(Color.parseColor("#5EE0B0"), dp(2), Color.TRANSPARENT, 0));
+        green.setBackground(Ui.rounded(Color.parseColor("#5EE0B0"), dp(3), Color.TRANSPARENT, 0));
         live.addView(green, new LinearLayout.LayoutParams(dp(5), dp(5)));
-        TextView liveText = Ui.mono(this, "OVERVIEW / 管理快照", 8.5f, true, Color.parseColor("#A9C1F2"));
-        liveText.setLetterSpacing(0.1f);
+        TextView liveText = Ui.mono(this, "OVERVIEW / 管理快照", 10, true, Color.parseColor("#A9C1F2"));
+        liveText.setLetterSpacing(0.08f);
         LinearLayout.LayoutParams liveLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        liveLp.leftMargin = dp(7);
+        liveLp.leftMargin = dp(8);
         liveText.setLayoutParams(liveLp);
         live.addView(liveText);
         top.addView(live, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        TextView refresh = Ui.text(this, "刷新 ›", 9.5f, true, Color.parseColor("#DCE7FF"));
+
+        LinearLayout refresh = Ui.row(this);
+        refresh.setGravity(Gravity.CENTER_VERTICAL);
         refresh.setPadding(dp(9), dp(5), dp(9), dp(5));
-        refresh.setBackground(Ui.rounded(Color.TRANSPARENT, dp(6), Color.parseColor("#3D5A8F"), dp(1)));
+        refresh.setBackground(Ui.rounded(0x0DFFFFFF, dp(7), 0x3DBED3FF, dp(1)));
+        GlyphView refreshIcon = new GlyphView(this, "sync", Color.parseColor("#DCE7FF"));
+        refresh.addView(refreshIcon, new LinearLayout.LayoutParams(dp(13), dp(13)));
+        TextView refreshText = Ui.text(this, "刷新", 10.5f, true, Color.parseColor("#DCE7FF"));
+        LinearLayout.LayoutParams refreshTextLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        refreshTextLp.leftMargin = dp(5);
+        refreshText.setLayoutParams(refreshTextLp);
+        refresh.addView(refreshText);
         refresh.setOnClickListener(v -> toast("已刷新：全量数据更新于 " + timeNow()));
         top.addView(refresh);
-        hero.addView(top);
+        inner.addView(top);
 
         LinearLayout main = Ui.row(this);
         main.setGravity(Gravity.BOTTOM);
         LinearLayout.LayoutParams mainLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        mainLp.topMargin = dp(19);
+        mainLp.topMargin = dp(20);
         main.setLayoutParams(mainLp);
         LinearLayout numBox = Ui.column(this);
         numBox.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        TextView label = Ui.text(this, "累计用户", 9.5f, false, Ui.HERO_MUTED);
+        TextView label = Ui.text(this, "累计用户", 10.5f, false, Ui.HERO_MUTED);
         label.setLetterSpacing(0.04f);
         numBox.addView(label);
         LinearLayout numLine = Ui.row(this);
         numLine.setGravity(Gravity.BOTTOM);
         LinearLayout.LayoutParams numLineLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        numLineLp.topMargin = dp(5);
+        numLineLp.topMargin = dp(3);
         numLine.setLayoutParams(numLineLp);
-        TextView number = Ui.mono(this, formatInt(totalUsers), 44, true, Color.WHITE);
+        TextView number = Ui.mono(this, formatInt(totalUsers), 52, true, Color.WHITE);
         number.setIncludeFontPadding(false);
         number.setLineSpacing(0, 1f);
         numLine.addView(number);
-        TextView unit = Ui.text(this, "位用户", 9.5f, false, Ui.HERO_MUTED);
-        unit.setPadding(dp(7), 0, 0, dp(10));
+        TextView unit = Ui.text(this, "位用户", 10.5f, false, Ui.HERO_MUTED);
+        unit.setPadding(dp(8), 0, 0, dp(10));
         numLine.addView(unit);
         numBox.addView(numLine);
         main.addView(numBox);
@@ -334,65 +348,80 @@ public class MainActivity extends Activity {
         LinearLayout note = Ui.column(this);
         note.setGravity(Gravity.RIGHT);
         note.setPadding(0, 0, 0, dp(2));
-        note.setLayoutParams(new LinearLayout.LayoutParams(dp(104), ViewGroup.LayoutParams.WRAP_CONTENT));
-        note.addView(heroStat(String.valueOf(newUsers), "本月新增"));
+        note.setLayoutParams(new LinearLayout.LayoutParams(dp(126), ViewGroup.LayoutParams.WRAP_CONTENT));
+        note.addView(heroNote(String.valueOf(newUsers), "本月新增"));
         LinearLayout.LayoutParams noteLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        noteLp.topMargin = dp(10);
-        View second = heroStat(String.valueOf(activeUsers), "近 30 天活跃");
+        noteLp.topMargin = dp(8);
+        View second = heroNote(String.valueOf(activeUsers), "近 30 天活跃");
         second.setLayoutParams(noteLp);
         note.addView(second);
         main.addView(note);
-        hero.addView(main);
+        inner.addView(main);
 
         View rule = new View(this);
-        rule.setBackgroundColor(Color.parseColor("#263A59"));
+        rule.setBackgroundColor(0x2EABC5F5);
         LinearLayout.LayoutParams ruleLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
-        ruleLp.topMargin = dp(15);
+        ruleLp.topMargin = dp(18);
         rule.setLayoutParams(ruleLp);
-        hero.addView(rule);
+        inner.addView(rule);
 
         LinearLayout kpis = Ui.row(this);
         LinearLayout.LayoutParams kpisLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        kpisLp.topMargin = dp(12);
+        kpisLp.topMargin = dp(14);
         kpis.setLayoutParams(kpisLp);
         kpis.addView(heroKpi("预算总额", compactMoney(budget), "人均 " + shortMoney(totalUsers == 0 ? 0 : budget / totalUsers), false));
         kpis.addView(heroDivide());
         kpis.addView(heroKpi("合同总额", compactMoney(contractTotal), db.contracts(null).size() + " 份合同", false));
         kpis.addView(heroDivide());
         kpis.addView(heroKpi("在管项目", String.valueOf(projects), stalled + " 个停滞", stalled > 0));
-        hero.addView(kpis);
+        inner.addView(kpis);
 
         LinearLayout axis = Ui.row(this);
         LinearLayout.LayoutParams axisLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        axisLp.topMargin = dp(13);
+        axisLp.topMargin = dp(15);
         axis.setLayoutParams(axisLp);
-        TextView date = Ui.mono(this, todayAxis(), 8.5f, true, Color.parseColor("#A7BFEA"));
+        TextView date = Ui.mono(this, todayAxis(), 9.5f, true, Color.parseColor("#A7BFEA"));
         date.setSingleLine(true);
         date.setGravity(Gravity.START);
         date.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         axis.addView(date);
-        TextView source = Ui.mono(this, Session.demo ? "本地演示" : "服务端数据", 8.5f, false, Ui.HERO_DIM);
+        TextView source = Ui.mono(this, Session.demo ? "本地演示" : "服务端数据", 9.5f, false, Ui.HERO_DIM);
         source.setSingleLine(true);
         source.setGravity(Gravity.CENTER);
         source.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         axis.addView(source);
-        TextView version = Ui.mono(this, "v" + appVersionName(), 8.5f, false, Ui.HERO_DIM);
+        TextView version = Ui.mono(this, "v" + appVersionName(), 9.5f, false, Ui.HERO_DIM);
         version.setSingleLine(true);
         version.setGravity(Gravity.END);
         version.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         axis.addView(version);
-        hero.addView(axis);
+        inner.addView(axis);
         return hero;
+    }
+
+    private View heroNote(String value, String label) {
+        LinearLayout row = Ui.row(this);
+        row.setGravity(Gravity.BOTTOM);
+        TextView number = Ui.mono(this, value, 13.5f, true, Color.WHITE);
+        number.setIncludeFontPadding(false);
+        row.addView(number);
+        TextView text = Ui.text(this, label, 10, false, Color.parseColor("#C7D6F2"));
+        text.setSingleLine(true);
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        textLp.leftMargin = dp(4);
+        text.setLayoutParams(textLp);
+        row.addView(text);
+        return row;
     }
 
     private View heroStat(String value, String label) {
         LinearLayout box = Ui.column(this);
         box.setGravity(Gravity.RIGHT);
-        TextView number = Ui.mono(this, value, 15, true, Color.parseColor("#F5F8FF"));
+        TextView number = Ui.mono(this, value, 13.5f, true, Color.parseColor("#F5F8FF"));
         number.setIncludeFontPadding(false);
         number.setGravity(Gravity.RIGHT);
         box.addView(number);
-        TextView text = Ui.text(this, label, 9, false, Color.parseColor("#B9C9E6"));
+        TextView text = Ui.text(this, label, 9.5f, false, Color.parseColor("#B9C9E6"));
         text.setSingleLine(true);
         text.setGravity(Gravity.RIGHT);
         LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -413,15 +442,15 @@ public class MainActivity extends Activity {
         LinearLayout box = Ui.column(this);
         box.setPadding(dp(12), 0, dp(6), 0);
         box.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        box.addView(Ui.text(this, label, 8.5f, false, Color.parseColor("#8FA9D6")));
-        TextView number = Ui.mono(this, value, 14.5f, true, Color.parseColor("#F5F8FF"));
+        box.addView(Ui.text(this, label, 10, false, Color.parseColor("#8FA9D6")));
+        TextView number = Ui.mono(this, value, 17, true, Color.parseColor("#F5F8FF"));
         number.setIncludeFontPadding(false);
         number.setSingleLine(true);
         LinearLayout.LayoutParams numLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         numLp.topMargin = dp(4);
         number.setLayoutParams(numLp);
         box.addView(number);
-        TextView subText = Ui.mono(this, sub, 8.5f, false, warn ? Color.parseColor("#FFB37F") : Color.parseColor("#8FA9D6"));
+        TextView subText = Ui.mono(this, sub, 10, false, warn ? Color.parseColor("#FFB37F") : Color.parseColor("#8FA9D6"));
         subText.setSingleLine(true);
         box.addView(subText);
         return box;
@@ -431,11 +460,13 @@ public class MainActivity extends Activity {
         LinearLayout item = Ui.column(this);
         item.setPadding(dp(8), dp(9), dp(6), dp(9));
         item.setBackground(Ui.rounded(Color.WHITE, dp(9), Ui.LINE, dp(1)));
-        item.setLayoutParams(new LinearLayout.LayoutParams(0, dp(62), 1));
+        LinearLayout.LayoutParams itemLp = new LinearLayout.LayoutParams(0, dp(62), 1);
+        itemLp.rightMargin = dp(6);
+        item.setLayoutParams(itemLp);
         GlyphView icon = new GlyphView(this, iconType, Ui.BLUE);
         icon.setLayoutParams(new LinearLayout.LayoutParams(dp(18), dp(18)));
         item.addView(icon);
-        TextView text = Ui.text(this, label, 10.5f, true, Ui.INK);
+        TextView text = Ui.text(this, label, 11.5f, true, Ui.INK);
         LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         textLp.topMargin = dp(8);
         text.setLayoutParams(textLp);
@@ -540,12 +571,12 @@ public class MainActivity extends Activity {
         for (Db.User user : users) {
             if (shown++ >= limit) break;
             LinearLayout row = Ui.row(this);
-            row.setPadding(dp(13), dp(13), dp(13), dp(13));
+            row.setPadding(dp(14), dp(14), dp(16), dp(14));
             row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            TextView rank = Ui.mono(this, String.format(Locale.CHINA, "%02d", shown), 9.5f, true, Ui.BLUE);
+            TextView rank = Ui.mono(this, String.format(Locale.CHINA, "%02d", shown), 10, true, Ui.BLUE);
             rank.setGravity(Gravity.CENTER);
-            rank.setBackground(Ui.rounded(Ui.BLUE_SOFT, dp(7), Color.TRANSPARENT, 0));
-            rank.setLayoutParams(new LinearLayout.LayoutParams(dp(27), dp(27)));
+            rank.setBackground(Ui.rounded(Ui.BLUE_SOFT, dp(8), Color.TRANSPARENT, 0));
+            rank.setLayoutParams(new LinearLayout.LayoutParams(dp(30), dp(30)));
             row.addView(rank);
             LinearLayout main = Ui.column(this);
             LinearLayout.LayoutParams mainLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
@@ -564,11 +595,11 @@ public class MainActivity extends Activity {
             sub.setLayoutParams(subLp);
             main.addView(sub);
             row.addView(main);
-            TextView budget = Ui.mono(this, shortMoney(user.budget), 12, true, Ui.INK);
+            TextView budget = Ui.mono(this, shortMoney(user.budget), 13.5f, true, Ui.INK);
             budget.setGravity(Gravity.RIGHT);
             budget.setSingleLine(true);
             budget.setIncludeFontPadding(false);
-            budget.setLayoutParams(new LinearLayout.LayoutParams(dp(82), ViewGroup.LayoutParams.WRAP_CONTENT));
+            budget.setLayoutParams(new LinearLayout.LayoutParams(dp(90), ViewGroup.LayoutParams.WRAP_CONTENT));
             row.addView(budget);
             row.setOnClickListener(v -> openUser(user));
             block.addView(row);
@@ -732,7 +763,7 @@ public class MainActivity extends Activity {
         boolean stalled = db.stalled(user.id);
         boolean disabled = "停用".equals(user.status);
         LinearLayout row = Ui.row(this);
-        row.setPadding(dp(14), dp(14), dp(14), dp(14));
+        row.setPadding(dp(14), dp(15), dp(14), dp(15));
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         row.setAlpha(disabled ? 0.62f : 1f);
 
@@ -756,14 +787,15 @@ public class MainActivity extends Activity {
         method.setLayoutParams(methodLp);
         nameLine.addView(method);
         if (stalled && !disabled) {
-            TextView stall = Ui.pill(this, "停滞", Ui.ORANGE, Ui.ORANGE_SOFT);
+            int idleDays = stalledDays(user.id);
+            TextView stall = Ui.pill(this, idleDays > 0 ? "停滞 " + idleDays + " 天" : "停滞", Ui.ORANGE, Ui.ORANGE_SOFT);
             LinearLayout.LayoutParams stallLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             stallLp.leftMargin = dp(6);
             stall.setLayoutParams(stallLp);
             nameLine.addView(stall);
         }
         main.addView(nameLine);
-        TextView project = Ui.text(this, user.projectName + " · " + user.city + " · " + maskPhone(user.phone), 10, false, Ui.MUTED);
+        TextView project = Ui.text(this, user.projectName + " · " + user.city, 10, false, Ui.MUTED);
         project.setSingleLine(true);
         project.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams projectLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -789,9 +821,10 @@ public class MainActivity extends Activity {
 
         LinearLayout foot = Ui.row(this);
         foot.setPadding(0, dp(4), 0, 0);
-        foot.addView(Ui.mono(this, "已支出 " + shortMoney(user.spent) + " / 预算 " + shortMoney(user.budget), 9.5f, false, Ui.MUTED));
-        TextView end = Ui.mono(this, user.openIssues > 0 ? user.openIssues + " 个未解问题" : (stalled ? "超过 10 天未更新" : "进度正常"),
-                9.5f, false, user.openIssues > 0 ? Ui.ORANGE : Ui.MUTED);
+        foot.addView(Ui.mono(this, "已支出 " + shortMoney(user.spent), 9.5f, false, Ui.MUTED));
+        String footEnd = user.openIssues > 0 ? user.openIssues + " 个问题"
+                : (disabled ? "已禁用" : "进度 " + Math.min(9, db.nodes(user.id).size()) + " / 9");
+        TextView end = Ui.mono(this, footEnd, 9.5f, false, user.openIssues > 0 ? Ui.ORANGE : Ui.MUTED);
         end.setGravity(Gravity.RIGHT);
         end.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         foot.addView(end);
@@ -800,8 +833,8 @@ public class MainActivity extends Activity {
 
         LinearLayout right = Ui.column(this);
         right.setGravity(Gravity.RIGHT);
-        right.setLayoutParams(new LinearLayout.LayoutParams(dp(84), ViewGroup.LayoutParams.WRAP_CONTENT));
-        TextView budget = Ui.mono(this, shortMoney(user.budget), 12, true, Ui.INK);
+        right.setLayoutParams(new LinearLayout.LayoutParams(dp(70), ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView budget = Ui.mono(this, shortMoney(user.budget), 13.5f, true, Ui.INK);
         budget.setGravity(Gravity.RIGHT);
         budget.setSingleLine(true);
         budget.setIncludeFontPadding(false);
@@ -821,7 +854,7 @@ public class MainActivity extends Activity {
         row.setBackgroundColor(Color.WHITE);
         row.setOnClickListener(v -> openUser(user));
         LinearLayout wrap = Ui.column(this);
-        wrap.setBackgroundColor(Color.WHITE);
+        wrap.setBackgroundColor(Ui.PAGE);
         wrap.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         wrap.addView(row);
         wrap.addView(Ui.divider(this));
@@ -927,12 +960,12 @@ public class MainActivity extends Activity {
         boolean pending = contract.total > contract.paid;
         boolean overdue = "风险".equals(contract.status) || "逾期".equals(contract.status);
         LinearLayout row = Ui.row(this);
-        row.setPadding(dp(14), dp(13), dp(14), dp(13));
+        row.setPadding(dp(14), dp(14), dp(14), dp(14));
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout main = Ui.column(this);
         main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         LinearLayout title = Ui.row(this);
-        title.addView(Ui.text(this, contract.name, 12, true, Ui.INK));
+        title.addView(Ui.text(this, contract.name, 13, true, Ui.INK));
         String tag = overdue ? "逾期" : (pending ? "待付" : "已付");
         TextView pill = Ui.pill(this, tag, overdue ? Ui.RED : (pending ? Ui.BLUE_DARK : Ui.GREEN),
                 overdue ? Ui.RED_SOFT : (pending ? Ui.BLUE_SOFT : Ui.GREEN_SOFT));
@@ -941,13 +974,16 @@ public class MainActivity extends Activity {
         pill.setLayoutParams(pillLp);
         title.addView(pill);
         main.addView(title);
-        main.addView(Ui.text(this, contract.userName + " · " + contract.status + " · 节点 " + contract.nodesDone + "/" + contract.nodesTotal, 9.5f, false, Ui.MUTED));
+        Db.User contractUser = db.user(contract.userId);
+        String where = contractUser == null || contractUser.city == null || contractUser.city.isEmpty() ? "" : " · " + contractUser.city;
+        main.addView(Ui.text(this, contract.userName + where + " · 节点 " + contract.nodesDone + "/" + contract.nodesTotal
+                + (pending ? " · 待付 " + pct(contract.getPending() * 100 / Math.max(1, contract.total)) : ""), 9.5f, false, Ui.MUTED));
         row.addView(main);
         main.setPadding(0, 0, dp(10), 0);
         LinearLayout side = Ui.column(this);
         side.setGravity(Gravity.RIGHT);
-        side.setLayoutParams(new LinearLayout.LayoutParams(dp(88), ViewGroup.LayoutParams.WRAP_CONTENT));
-        TextView amount = Ui.mono(this, shortMoney(pending ? contract.getPending() : contract.paid), 11.5f, true, Ui.INK);
+        side.setLayoutParams(new LinearLayout.LayoutParams(dp(96), ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView amount = Ui.mono(this, money(contract.total), 13, true, Ui.INK);
         amount.setGravity(Gravity.RIGHT);
         amount.setSingleLine(true);
         amount.setIncludeFontPadding(false);
@@ -958,7 +994,7 @@ public class MainActivity extends Activity {
         row.addView(side);
         row.setOnClickListener(v -> showContractDialog(contract));
         LinearLayout wrap = Ui.column(this);
-        wrap.setBackgroundColor(Color.WHITE);
+        wrap.setBackgroundColor(Ui.PAGE);
         wrap.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         wrap.addView(row);
         wrap.addView(Ui.divider(this));
@@ -999,12 +1035,12 @@ public class MainActivity extends Activity {
         TextView kick = Ui.mono(this, kicker, 9, true, Ui.MUTED);
         kick.setLetterSpacing(0.12f);
         left.addView(kick);
-        TextView titleView = Ui.text(this, title, 22, true, Ui.INK);
+        TextView titleView = Ui.text(this, title, 23, true, Ui.INK);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         titleLp.topMargin = dp(3);
         titleView.setLayoutParams(titleLp);
         left.addView(titleView);
-        TextView subView = Ui.text(this, sub, 10, false, Ui.MUTED);
+        TextView subView = Ui.text(this, sub, 10.5f, false, Ui.MUTED);
     subView.setPadding(0, dp(4), 0, 0);
         left.addView(subView);
         head.addView(left);
@@ -1023,18 +1059,19 @@ public class MainActivity extends Activity {
 
     private View sectionHeadView(String index, String title, String meta) {
         LinearLayout row = Ui.row(this);
-        row.setGravity(Gravity.BOTTOM);
+        row.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout left = Ui.row(this);
+        left.setGravity(Gravity.CENTER_VERTICAL);
         left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         TextView idx = Ui.mono(this, index, 9.5f, true, Ui.BLUE);
-        idx.setPadding(0, dp(3), dp(7), 0);
+        idx.setPadding(0, 0, dp(8), 0);
         left.addView(idx);
-        left.addView(Ui.text(this, title, 16, true, Ui.INK));
+        left.addView(Ui.text(this, title, 17.5f, true, Ui.INK));
         row.addView(left);
         row.addView(Ui.mono(this, meta, 9, false, Ui.MUTED));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = dp(18);
-        lp.bottomMargin = dp(9);
+        lp.topMargin = dp(22);
+        lp.bottomMargin = dp(12);
         row.setLayoutParams(lp);
         return row;
     }
@@ -1553,7 +1590,7 @@ public class MainActivity extends Activity {
 
     private View infoActionRow(String title, String sub, String action, Runnable onClick, boolean primary) {
         LinearLayout row = Ui.row(this);
-        row.setPadding(dp(14), dp(13), dp(14), dp(13));
+        row.setPadding(dp(14), dp(14), dp(14), dp(14));
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout main = Ui.column(this);
         main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
@@ -1712,31 +1749,22 @@ public class MainActivity extends Activity {
 
     private void showAdDetail(String initialSlot) {
         final Dialog dialog = new Dialog(this);
-        Window window = dialog.getWindow();
-        if (window == null) return;
-        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        window.setGravity(Gravity.BOTTOM);
-
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout root = Ui.column(this);
-        root.setBackground(Ui.topRounded(Color.WHITE, dp(22)));
-        root.setPadding(dp(20), dp(10), dp(20), dp(20));
-
-        View grab = new View(this);
-        grab.setBackground(Ui.rounded(Color.parseColor("#D9E1EC"), dp(2), Color.TRANSPARENT, 0));
-        LinearLayout.LayoutParams grabLp = new LinearLayout.LayoutParams(dp(38), dp(4));
-        grabLp.gravity = Gravity.CENTER_HORIZONTAL;
-        grabLp.bottomMargin = dp(14);
-        grab.setLayoutParams(grabLp);
-        root.addView(grab);
+        root.setPadding(dp(14), dp(12), dp(14), dp(12));
+        root.setBackground(Ui.rounded(Color.WHITE, dp(18), Ui.LINE, dp(1)));
 
         LinearLayout header = Ui.row(this);
-        LinearLayout headerMain = Ui.column(this);
-        headerMain.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        headerMain.addView(Ui.text(this, "广告效果详情", 18, true, Ui.INK));
-        headerMain.addView(Ui.text(this, "六个小程序广告位分别统计 · 点击记录仅用于效果分析", 9.5f, false, Ui.MUTED));
-        header.addView(headerMain);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout headerText = Ui.column(this);
+        headerText.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        TextView kicker = Ui.mono(this, "AD PERFORMANCE / 六广告位", 9, true, Ui.BLUE);
+        kicker.setLetterSpacing(0.06f);
+        headerText.addView(kicker);
+        headerText.addView(Ui.text(this, "广告效果详情", 16, true, Ui.INK));
+        header.addView(headerText);
         FrameLayout close = new FrameLayout(this);
-        close.setBackground(Ui.rounded(Color.WHITE, dp(8), Ui.LINE, dp(1)));
+        close.setBackground(Ui.rounded(Ui.PANEL, dp(15), Ui.LINE, dp(1)));
         close.setLayoutParams(new LinearLayout.LayoutParams(dp(30), dp(30)));
         GlyphView closeIcon = new GlyphView(this, "close", Ui.MUTED);
         closeIcon.setLayoutParams(new FrameLayout.LayoutParams(dp(15), dp(15), Gravity.CENTER));
@@ -1748,84 +1776,93 @@ public class MainActivity extends Activity {
         header.setLayoutParams(headerLp);
         root.addView(header);
 
-        final String[] selected = {initialSlot == null ? "" : initialSlot};
-        String[] filterNames = {"全部", "首页 Banner", "记账页信息流", "进度页信息流", "统计页信息流", "导出页激励视频", "导出页底部 Banner"};
-        String[] filterKeys = {"", Db.AD_SLOT_KEYS[0], Db.AD_SLOT_KEYS[1], Db.AD_SLOT_KEYS[2], Db.AD_SLOT_KEYS[3], Db.AD_SLOT_KEYS[4], Db.AD_SLOT_KEYS[5]};
-        TextView[] filterViews = new TextView[filterNames.length];
-        HorizontalScrollView filterScroll = new HorizontalScrollView(this);
-        filterScroll.setHorizontalScrollBarEnabled(false);
-        LinearLayout filterRow = Ui.row(this);
-        filterRow.setPadding(0, 0, 0, dp(10));
-        filterScroll.addView(filterRow);
-        filterScroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout body = Ui.column(this);
         ScrollView bodyScroll = new ScrollView(this);
         bodyScroll.setClipToPadding(false);
+        bodyScroll.setPadding(0, 0, 0, dp(6));
         bodyScroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        for (int i = 0; i < filterNames.length; i++) {
-            TextView tab = Ui.text(this, filterNames[i], 10, true, Ui.INK2);
-            tab.setGravity(Gravity.CENTER);
-            tab.setPadding(dp(10), dp(6), dp(10), dp(6));
-            tab.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            paintAdTab(tab, filterNames[i].equals("全部") ? "".equals(selected[0]) : filterKeys[i].equals(selected[0]));
-            final String key = filterKeys[i];
-            final String name = filterNames[i];
-            tab.setOnClickListener(v -> {
-                selected[0] = key;
-                for (int j = 0; j < filterViews.length; j++) {
-                    paintAdTab(filterViews[j], filterNames[j].equals("全部") ? "".equals(key) : filterKeys[j].equals(key));
-                }
-                renderAdBody(body, key, dialog);
-            });
-            filterViews[i] = tab;
-            LinearLayout.LayoutParams tabLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            tabLp.rightMargin = dp(6);
-            tab.setLayoutParams(tabLp);
-            filterRow.addView(tab);
-        }
-        root.addView(filterScroll);
         root.addView(bodyScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         dialog.setContentView(root);
         dialog.setCanceledOnTouchOutside(true);
         dialog.show();
         Window shown = dialog.getWindow();
         if (shown != null) {
-            int height = (int) (getResources().getDisplayMetrics().heightPixels * 0.84f);
-            shown.setLayout(WindowManager.LayoutParams.MATCH_PARENT, height);
+            shown.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+            shown.setGravity(Gravity.BOTTOM);
+            shown.setLayout(WindowManager.LayoutParams.MATCH_PARENT,
+                    (int) (getResources().getDisplayMetrics().heightPixels * 0.88f));
         }
-        renderAdBody(body, selected[0], dialog);
-    }
-
-    private void paintAdTab(TextView tab, boolean on) {
-        tab.setTextColor(on ? Color.WHITE : Ui.INK2);
-        tab.setBackground(Ui.rounded(on ? Ui.NAVY : Ui.PANEL, dp(15), on ? Ui.NAVY : Ui.LINE, dp(1)));
+        renderAdBody(body, initialSlot == null ? "" : initialSlot, dialog);
     }
 
     private void renderAdBody(LinearLayout body, String slot, final Dialog dialog) {
         body.removeAllViews();
         JSONObject root = adSnapshot(slot);
+        JSONObject allRoot = slot.isEmpty() ? root : adSnapshot("");
+        JSONArray allSlots = allRoot.optJSONArray("slots");
         JSONObject summary = root.optJSONObject("summary");
         int impressions = summary == null ? 0 : summary.optInt("impressions");
         int clicks = summary == null ? 0 : summary.optInt("clicks");
         int clickUsers = summary == null ? 0 : summary.optInt("clickUsers");
         double revenue = summary == null ? 0 : summary.optDouble("estimatedRevenue", 0);
         double ctr = summary == null ? 0 : summary.optDouble("ctr", 0);
+        double ecpm = impressions == 0 ? 0 : revenue * 1000.0 / impressions;
 
         LinearLayout row1 = Ui.row(this);
-        row1.addView(adCell("曝光", formatInt(impressions), "次 · 近 30 天"));
-        row1.addView(adCell("点击", formatInt(clicks), ctr + "% 点击率"));
+        row1.addView(adCell("曝光", compactCount(impressions), "次 · 近 30 天"));
+        row1.addView(adCell("点击", formatInt(clicks), String.format(Locale.CHINA, "%.1f%% 点击率", ctr)));
         LinearLayout row2 = Ui.row(this);
-        row2.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         row2.addView(adCell("点击用户", formatInt(clickUsers), "人均 " + (summary == null ? 0 : summary.optDouble("avgClicks")) + " 次"));
-        row2.addView(adCell("广告收入", "¥" + String.format(Locale.CHINA, "%,.0f", revenue), "按各广告位 eCPM 估算"));
+        row2.addView(adCell("广告收入", "¥" + String.format(Locale.CHINA, "%,.0f", revenue), "eCPM ¥" + String.format(Locale.CHINA, "%.1f", ecpm)));
         LinearLayout.LayoutParams firstRowLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         firstRowLp.bottomMargin = dp(7);
         row1.setLayoutParams(firstRowLp);
         body.addView(row1);
         body.addView(row2);
 
-        body.addView(adSectionHead("01", "点击次数排行", "TOP 5"));
+        body.addView(adSectionHead("01", "广告位表现", "点击广告位可筛选"));
+        LinearLayout filterBlock = Ui.column(this);
+        filterBlock.setPadding(0, dp(1), 0, dp(8));
+        filterBlock.addView(adFilterChip("全部广告位", "", slot.isEmpty(), body, dialog, true));
+        for (int pair = 0; pair < 3; pair++) {
+            LinearLayout pairRow = Ui.row(this);
+            LinearLayout.LayoutParams pairLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            pairLp.topMargin = dp(6);
+            pairRow.setLayoutParams(pairLp);
+            for (int side = 0; side < 2; side++) {
+                int index = pair * 2 + side;
+                View chip = adFilterChip(Db.AD_SLOT_NAMES[index], Db.AD_SLOT_KEYS[index],
+                        slot.equals(Db.AD_SLOT_KEYS[index]), body, dialog, false);
+                LinearLayout.LayoutParams chipLp = new LinearLayout.LayoutParams(0, dp(30), 1);
+                if (side == 1) chipLp.leftMargin = dp(6);
+                chip.setLayoutParams(chipLp);
+                pairRow.addView(chip);
+            }
+            filterBlock.addView(pairRow);
+        }
+        body.addView(filterBlock);
+
+        LinearLayout table = Ui.column(this);
+        table.setBackground(Ui.rounded(Color.WHITE, dp(10), Ui.LINE, dp(1)));
+        LinearLayout headerRow = adTableHeader();
+        table.addView(headerRow);
+        table.addView(dividerInside());
+        table.addView(adTableRow("全部广告位", summaryOf(allRoot), "", body, dialog, slot.isEmpty(), true));
+        if (allSlots != null) {
+            for (int i = 0; i < allSlots.length(); i++) {
+                JSONObject item = allSlots.optJSONObject(i);
+                if (item == null) continue;
+                String key = item.optString("key");
+                table.addView(dividerInside());
+                table.addView(adTableRow(item.optString("name", key), item, key, body, dialog, slot.equals(key), false));
+            }
+        }
+        LinearLayout.LayoutParams tableLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tableLp.bottomMargin = dp(4);
+        table.setLayoutParams(tableLp);
+        body.addView(table);
+
+        body.addView(adSectionHead("02", "用户点击排行", "TOP 5"));
         JSONArray ranking = root.optJSONArray("ranking");
         int topClicks = 1;
         if (ranking != null) {
@@ -1835,73 +1872,77 @@ public class MainActivity extends Activity {
             }
         }
         LinearLayout rankBlock = Ui.column(this);
-        rankBlock.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         rankBlock.setBackground(Ui.rounded(Color.WHITE, dp(10), Ui.LINE, dp(1)));
-        rankBlock.setPadding(dp(10), dp(4), dp(10), dp(4));
+        rankBlock.setPadding(dp(11), dp(5), dp(11), dp(5));
         if (ranking != null && ranking.length() > 0) {
             for (int i = 0; i < Math.min(5, ranking.length()); i++) {
                 JSONObject item = ranking.optJSONObject(i);
                 if (item == null) continue;
                 LinearLayout row = Ui.row(this);
-                row.setPadding(0, dp(7), 0, dp(7));
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(0, dp(8), 0, dp(8));
                 TextView rank = Ui.mono(this, String.format(Locale.CHINA, "%02d", i + 1), 9.5f, true, Ui.BLUE);
                 rank.setLayoutParams(new LinearLayout.LayoutParams(dp(22), ViewGroup.LayoutParams.WRAP_CONTENT));
                 row.addView(rank);
                 LinearLayout main = Ui.column(this);
                 main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
                 LinearLayout nameLine = Ui.row(this);
-                nameLine.addView(Ui.text(this, item.optString("name", item.optString("user_id")), 11, true, Ui.INK));
-                TextView city = Ui.text(this, " · " + item.optString("city", ""), 9, false, Ui.MUTED);
+                nameLine.setGravity(Gravity.CENTER_VERTICAL);
+                nameLine.addView(Ui.text(this, item.optString("name", item.optString("user_id")), 11.5f, true, Ui.INK));
+                TextView city = Ui.text(this, " · " + item.optString("city", ""), 9.5f, false, Ui.MUTED);
                 nameLine.addView(city);
                 main.addView(nameLine);
                 LinearLayout track = adTrack(item.optInt("clicks") * 100.0 / topClicks);
-                LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(5));
-                trackLp.topMargin = dp(4);
+                LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(4));
+                trackLp.topMargin = dp(5);
                 track.setLayoutParams(trackLp);
                 main.addView(track);
-                main.addView(Ui.mono(this, "最近 " + item.optString("last_click"), 9, false, Ui.MUTED));
+                main.addView(Ui.mono(this, "最近 " + shortTime(item.optString("last_click")), 9, false, Ui.MUTED));
                 row.addView(main);
-                row.addView(Ui.mono(this, item.optInt("clicks") + " 次", 10, true, Ui.INK2));
+                row.addView(Ui.mono(this, item.optInt("clicks") + " 次", 11, true, Ui.INK2));
                 rankBlock.addView(row);
-                rankBlock.addView(dividerInside());
+                if (i < Math.min(5, ranking.length()) - 1) rankBlock.addView(dividerInside());
             }
         } else {
             rankBlock.addView(emptyText("这个广告位还没有点击用户"));
         }
         body.addView(rankBlock);
 
-        body.addView(adSectionHead("02", "点击明细", (slot.isEmpty() ? "全部广告位" : "当前广告位") + " · 最近优先"));
+        body.addView(adSectionHead("03", "点击明细", (slot.isEmpty() ? "全部广告位" : "当前广告位") + " · 最近优先"));
         LinearLayout clickBlock = Ui.column(this);
-        clickBlock.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         clickBlock.setBackground(Ui.rounded(Color.WHITE, dp(10), Ui.LINE, dp(1)));
         JSONArray clickItems = root.optJSONArray("clicks");
         if (clickItems != null && clickItems.length() > 0) {
-            for (int i = 0; i < Math.min(12, clickItems.length()); i++) {
+            int shown = Math.min(12, clickItems.length());
+            for (int i = 0; i < shown; i++) {
                 JSONObject item = clickItems.optJSONObject(i);
                 if (item == null) continue;
                 LinearLayout row = Ui.row(this);
-                row.setPadding(dp(10), dp(9), dp(10), dp(9));
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(dp(11), dp(9), dp(11), dp(9));
                 TextView time = Ui.mono(this, shortTime(item.optString("occurred_at")), 9, false, Ui.MUTED);
-                time.setLayoutParams(new LinearLayout.LayoutParams(dp(64), ViewGroup.LayoutParams.WRAP_CONTENT));
+                time.setLayoutParams(new LinearLayout.LayoutParams(dp(62), ViewGroup.LayoutParams.WRAP_CONTENT));
                 row.addView(time);
                 LinearLayout main = Ui.column(this);
                 main.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
                 main.addView(Ui.text(this, item.optString("user_name", item.optString("user_id")), 11, true, Ui.INK));
+                String creative = item.optString("creative", "");
                 String detail = item.optString("slot_name", item.optString("slot_key"));
+                if (!creative.isEmpty() && !creative.equals(detail)) detail += " · " + creative;
                 if (!item.optString("project_name").isEmpty()) detail += " · " + item.optString("project_name");
-                main.addView(Ui.text(this, detail, 9.5f, false, Ui.MUTED));
+                main.addView(Ui.text(this, detail, 9, false, Ui.MUTED));
                 row.addView(main);
                 row.addView(Ui.mono(this, "第 " + item.optInt("user_click_count") + " 次", 9, false, Ui.BLUE));
                 clickBlock.addView(row);
-                clickBlock.addView(dividerInside());
+                if (i < shown - 1) clickBlock.addView(dividerInside());
             }
         } else {
             clickBlock.addView(emptyText("这个广告位还没有点击记录"));
         }
         body.addView(clickBlock);
 
-        TextView note = Ui.text(this, "点击记录仅用于广告效果分析，不关联用户账本内容。", 9, false, Ui.MUTED);
-        note.setPadding(0, dp(8), 0, dp(10));
+        TextView note = Ui.text(this, "同一用户在不同广告位点击分别计入；切换广告位后，上方汇总、排行与明细同步更新。", 9, false, Ui.MUTED);
+        note.setPadding(0, dp(9), 0, dp(10));
         body.addView(note);
 
         LinearLayout actions = Ui.row(this);
@@ -1917,6 +1958,60 @@ public class MainActivity extends Activity {
         actions.addView(export);
         actions.addView(close);
         body.addView(actions);
+    }
+
+    private JSONObject summaryOf(JSONObject root) {
+        JSONObject summary = root.optJSONObject("summary");
+        return summary == null ? new JSONObject() : summary;
+    }
+
+    private View adFilterChip(String name, String key, boolean selected, LinearLayout body, Dialog dialog, boolean full) {
+        TextView chip = Ui.text(this, name, full ? 11 : 10, true, selected ? Color.WHITE : Ui.INK2);
+        chip.setGravity(Gravity.CENTER);
+        chip.setSingleLine(true);
+        chip.setPadding(dp(6), 0, dp(6), 0);
+        chip.setBackground(Ui.rounded(selected ? Ui.NAVY : Ui.PANEL, dp(15),
+                selected ? Ui.NAVY : Ui.LINE, dp(1)));
+        chip.setOnClickListener(v -> renderAdBody(body, key, dialog));
+        if (full) {
+            chip.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(30)));
+        }
+        return chip;
+    }
+
+    private LinearLayout adTableHeader() {
+        LinearLayout row = Ui.row(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(11), dp(8), dp(11), dp(6));
+        row.addView(adTableText("广告位", 1.6f, Gravity.START, 9, false, Ui.MUTED));
+        row.addView(adTableText("曝光", .85f, Gravity.END, 9, false, Ui.MUTED));
+        row.addView(adTableText("点击", .8f, Gravity.END, 9, false, Ui.MUTED));
+        row.addView(adTableText("点击率", .65f, Gravity.END, 9, false, Ui.MUTED));
+        return row;
+    }
+
+    private TextView adTableText(String text, float weight, int gravity, float size, boolean bold, int color) {
+        TextView view = Ui.mono(this, text, size, bold, color);
+        view.setGravity(gravity);
+        view.setSingleLine(true);
+        view.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, weight));
+        return view;
+    }
+
+    private View adTableRow(String name, JSONObject item, String key, LinearLayout body, Dialog dialog, boolean selected, boolean all) {
+        int impressions = item.optInt("impressions");
+        int clicks = item.optInt("clicks");
+        double ctr = item.has("ctr") ? item.optDouble("ctr", 0) : (impressions == 0 ? 0 : clicks * 100.0 / impressions);
+        LinearLayout row = Ui.row(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(11), dp(9), dp(11), dp(9));
+        row.setBackgroundColor(selected ? Ui.BLUE_SOFT : Color.TRANSPARENT);
+        row.addView(adTableText(name, 1.6f, Gravity.START, 10, selected, selected ? Ui.BLUE_DARK : Ui.INK));
+        row.addView(adTableText(compactCount(impressions), .85f, Gravity.END, 9.5f, false, Ui.INK2));
+        row.addView(adTableText(formatInt(clicks), .8f, Gravity.END, 9.5f, false, Ui.INK2));
+        row.addView(adTableText(String.format(Locale.CHINA, "%.1f%%", ctr), .65f, Gravity.END, 9.5f, false, Ui.INK2));
+        row.setOnClickListener(v -> renderAdBody(body, key, dialog));
+        return row;
     }
 
     private View adCell(String label, String value, String sub) {
@@ -2205,13 +2300,14 @@ public class MainActivity extends Activity {
 
     private void addSectionHead(String index, String title, String meta, Runnable action) {
         LinearLayout row = Ui.row(this);
-        row.setGravity(Gravity.BOTTOM);
+        row.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout left = Ui.row(this);
+        left.setGravity(Gravity.CENTER_VERTICAL);
         left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         TextView idx = Ui.mono(this, index, 9.5f, true, Ui.BLUE);
-        idx.setPadding(0, dp(3), dp(7), 0);
+        idx.setPadding(0, 0, dp(8), 0);
         left.addView(idx);
-        left.addView(Ui.text(this, title, 16, true, Ui.INK));
+        left.addView(Ui.text(this, title, 17.5f, true, Ui.INK));
         row.addView(left);
         if (meta != null) {
             TextView metaView = Ui.mono(this, meta, 9, false, Ui.MUTED);
@@ -2328,6 +2424,26 @@ public class MainActivity extends Activity {
 
     private String formatInt(int value) {
         return String.format(Locale.CHINA, "%,d", value);
+    }
+
+    private String compactCount(int value) {
+        if (value >= 10000) {
+            String text = String.format(Locale.CHINA, "%.1f万", value / 10000.0);
+            return text.replace(".0万", "万");
+        }
+        return formatInt(value);
+    }
+
+    private int stalledDays(String userId) {
+        String latest = db.lastActivity(userId);
+        if (latest == null || latest.isEmpty()) return 0;
+        try {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
+            Date date = format.parse(latest.length() >= 10 ? latest.substring(0, 10) : latest);
+            return date == null ? 0 : Math.max(0, (int) ((System.currentTimeMillis() - date.getTime()) / 86400000L));
+        } catch (Exception ignored) {
+            return 0;
+        }
     }
 
     private String maskPhone(String phone) {

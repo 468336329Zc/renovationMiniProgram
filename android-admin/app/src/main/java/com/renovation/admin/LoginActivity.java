@@ -10,6 +10,7 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +33,9 @@ public class LoginActivity extends Activity {
             finish();
             return;
         }
+        ScrollView scroll = new ScrollView(this);
+        scroll.setBackgroundColor(Ui.BG);
+        scroll.setFillViewport(true);
         LinearLayout root = Ui.column(this);
         root.setBackgroundColor(Ui.BG);
         root.setPadding(Ui.dp(this, 24), Ui.dp(this, 54), Ui.dp(this, 24), Ui.dp(this, 24));
@@ -111,14 +115,23 @@ public class LoginActivity extends Activity {
         note.addView(Ui.text(this, "本地演示账号只读本地 SQLite 演示数据；其他账号登录后从 Flask API 同步服务端 MySQL 快照，管理端不保存数据库账号或 MySQL 密码。", 11, false, Ui.MUTED));
         root.addView(note);
 
-        TextView footer = Ui.text(this, "RENOVATION · CONTROL DESK  /  v1.0.21", 9, true, Color.parseColor("#9AA6BD"));
+        TextView footer = Ui.text(this, "RENOVATION · CONTROL DESK  /  v" + appVersionName(), 9, true, Color.parseColor("#9AA6BD"));
         footer.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams footerLp = Ui.matchWrap(this);
         footerLp.topMargin = Ui.dp(this, 22);
         footer.setLayoutParams(footerLp);
         root.addView(footer);
 
-        setContentView(root);
+        scroll.addView(root);
+        setContentView(scroll);
+    }
+
+    private String appVersionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception ignored) {
+            return "1.0.22";
+        }
     }
 
     private void doLogin() {
