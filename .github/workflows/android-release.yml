@@ -122,7 +122,7 @@ jobs:
             Android 管理员端原生 APK。
             本地演示账号：13800000001 / admin123（本地 SQLite 演示数据）。
             其他账号：直连 Flask API，同步服务端 MySQL 数据。
-            本次 v1.0.22：首页 Hero 改为整宽蓝图底纹（网格、光晕、校准角标），数字启用 Space Grotesk；用户行预算列收窄到 70dp、合同行金额列放宽到 96dp，修复金额贴边与行内拥挤；广告详情改为“全部广告位”独占整行 + 六个广告位两列三行筛选，新增广告位表现表，汇总/排行/明细同步联动；本地演示广告样本调整为每广告位 600 次曝光、60 次点击。
+            本次 v1.0.23：重做首页数据展示，Hero 改为 18dp 圆角深色块并加大内边距；主数字、右侧两项统计、三列 KPI、底部日期/数据源/版本分层留白；快捷入口改为 12dp 圆角等宽卡片，卡间距 8dp；保留六广告位筛选、广告位表现表、点击排行与明细联动。
             构建：Gradle + JDK 17；签名证书由 GitHub Secrets 注入并保持固定。
           files: android-admin/app/build/outputs/apk/release/app-release.apk
           fail_on_unmatched_files: true

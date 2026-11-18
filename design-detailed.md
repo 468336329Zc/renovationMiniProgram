@@ -1,7 +1,7 @@
 # 装修记 · 详细设计
 
 > 本文件是最新详细设计基线，必须与当前代码保持一致。任何涉及表结构、接口、页面、类、关键流程的改动，必须同步修改本文件。
-> 对应版本：`v1.0.22`；需求见 `requirements.md`，架构见 `design-overview.md`。
+> 对应版本：`v1.0.23`；需求见 `requirements.md`，架构见 `design-overview.md`。
 
 ## 1. 数据库设计
 
@@ -230,7 +230,7 @@ LoginActivity.onCreate
 
 ## 5. 构建与签名
 
-- `android-admin/app/build.gradle`：`versionCode 22`、`versionName "1.0.22"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- `android-admin/app/build.gradle`：`versionCode 23`、`versionName "1.0.23"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - 本地构建需要 JDK 17（Gradle 8.7 + AGP 8.5.2）；Android SDK 位于 `/home/user/android-sdk`，`local.properties` 已写 `sdk.dir`。
 - 固定证书 SHA-256：`6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - GitHub Actions：`.github/workflows/android-release.yml`；Secrets：
@@ -265,24 +265,22 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 | 用户被停用 | 登录 403；已有 refresh token 吊销 |
 | 广告位关闭 | 小程序不展示；上报返回 403；管理端统计仍保留历史 |
 
-## 7. 管理端排版约束（v1.0.22）
+## 7. 管理端排版约束（v1.0.23）
 
-- Hero 改为内容区内圆角深色块，取消负边距全出血，左右内边距 18dp；标题、主数字、右侧两项统计、三列 KPI、底部日期/版本分层排布。
-- 主数字使用 44sp、关闭字体额外内边距，标签与数字之间保留 5dp；右侧统计改为“数值在上、标签在下”的两行结构，宽度固定 104dp，避免横向挤压。
-- 底部轴信息拆成三等分：日期左对齐、数据源居中、版本右对齐，单行不换行。
-- 分区标题顶部 25dp、底部 12dp，并设最小高度 27dp，卡片不再顶住标题。
-- 预算排行：排名使用 27dp 浅蓝编号块；行内左右各 13dp；金额列固定 82dp、右对齐、12sp 单行，不再被卡片边界切断。
-- 用户/合同列表同样采用固定金额列与单行省略，列表左右各 14dp，避免金额、长项目名越界。
+- Hero 为内容区内 18dp 圆角深色块，左右内边距 22dp、上下 22/20dp；背景保留蓝图网格、右上光晕与四角校准线，轮廓随圆角裁切。
+- 首页主信息分层：顶部快照标签与刷新按钮一行；标签 11sp 与 54sp 主数字之间留 8dp；主数字与“位用户”按基线对齐，右侧统计固定 150dp、两行间距 10dp。
+- 三列 KPI 位于发丝线下方 16dp；列间分隔线高 36dp，首列无左分隔、末列无右分隔；标签 10sp、主值 17sp、附注 10sp，附注与主值留 5dp。
+- 底部轴信息拆成三等分：日期左对齐、数据源居中、版本右对齐，全部单行不换行。
+- 快捷入口为四个等宽白卡，高度 66dp、圆角 12dp、卡间距 8dp；图标 18dp，文案 11.5sp，图标与文案间距 10dp。
+- 分区标题顶部 22dp、底部 12dp；预算排行编号块 30dp，金额列 90dp、右对齐、13.5sp 单行；用户/合同列表左右各 14dp，避免金额与长项目名越界。
 
-## 8. 验证清单（v1.0.22）
+## 8. 验证清单（v1.0.23）
 
 - [x] 服务端 Python `py_compile` 通过。
 - [x] 小程序 `node --check` 通过（data/ads/login/home/expenses/progress/stats/export/app）。
 - [x] Android `compileReleaseJavaWithJavac` 通过。
-- [x] Android `assembleRelease` 产出 `v1.0.22`，`apksigner` 证书 SHA-256 与基线一致。
+- [x] Android `assembleRelease` 产出 `v1.0.23`，`apksigner` 证书 SHA-256 与基线一致。
 - [x] 广告详情可按“全部广告位”和六个具体广告位筛选；广告位表现表、点击排行、点击明细随筛选同步。
-- [x] 首页 Hero 使用整宽底纹与 Space Grotesk 数字；用户行右列 70dp、合同行金额列 96dp，金额不再贴边。
+- [x] 首页 Hero 主数字、右侧统计、三列 KPI 与快捷入口按 v1.0.23 排版留白；用户行右列 70dp、合同行金额列 96dp，金额不再贴边。
 - [ ] MySQL 端到端联调（本机 MySQL 未启动）。
 - [ ] 真机安装/启动/远程登录验证（需设备与服务端地址）。
-- [ ] 微信真实 AppID/AppSecret 与 HTTPS 合法域名验证。
-- [ ] 真机复核首页 Hero、统计页预算 Top 5 在 360–430dp 宽度下无裁切、无标题压卡片、金额右对齐。
