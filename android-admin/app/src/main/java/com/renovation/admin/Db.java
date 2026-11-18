@@ -12,22 +12,33 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.Map;
 
-/** 本地演示数据库：管理员端不直连 MySQL，正式版由 Flask API 提供数据。 */
+/** 管理端本地库：演示账号使用 demo 库；服务端账号使用 remote 库作为只读镜像缓存。 */
 final class Db extends SQLiteOpenHelper {
-    private static final String NAME = "renovation_admin.db";
-    private static final int VERSION = 2;
-    private static Db instance;
+    static final String[] AD_SLOT_KEYS = {"home_banner", "expenses_feed", "progress_feed", "stats_feed", "export_rewarded", "export_feed"};
+    static final String[] AD_SLOT_NAMES = {"首页 Banner", "记账页信息流", "进度页信息流", "统计页信息流", "导出页激励视频", "导出页底部 Banner"};
+    static final double[] AD_SLOT_ECPM = {68, 42, 38, 36, 120, 58};
+    private static final int VERSION = 3;
+    private static Db demoInstance;
+    private static Db remoteInstance;
     private final Context context;
 
     static synchronized Db get(Context context) {
-        if (instance == null) instance = new Db(context.getApplicationContext());
-        return instance;
+        if (demoInstance == null) demoInstance = new Db(context.getApplicationContext(), "renovation_admin.db");
+        return demoInstance;
     }
 
-    private Db(Context context) {
-        super(context, NAME, null, VERSION);
+    static synchronized Db getRemote(Context context) {
+        if (remoteInstance == null) remoteInstance = new Db(context.getApplicationContext(), "renovation_admin_remote.db");
+        return remoteInstance;
+    }
+
+    private Db(Context context, String name) {
+        super(context, name, null, VERSION);
         this.context = context;
     }
 
@@ -41,6 +52,7 @@ final class Db extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE admins (id TEXT PRIMARY KEY, name TEXT, phone TEXT, role TEXT, status TEXT, created_at TEXT)");
         db.execSQL("CREATE TABLE audits (id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT, action TEXT, detail TEXT, created_at TEXT)");
         db.execSQL("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)");
+        db.execSQL("CREATE TABLE ad_events (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, slot_key TEXT, event_type TEXT, creative TEXT, page TEXT, occurred_at TEXT)");
         seed(db);
     }
 
@@ -54,6 +66,7 @@ final class Db extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS admins");
         db.execSQL("DROP TABLE IF EXISTS audits");
         db.execSQL("DROP TABLE IF EXISTS settings");
+        db.execSQL("DROP TABLE IF EXISTS ad_events");
         onCreate(db);
     }
 
@@ -205,6 +218,43 @@ final class Db extends SQLiteOpenHelper {
         setting(db, "ads", "true");
         setting(db, "export", "true");
         setting(db, "maintenance", "false");
+
+        // 本地演示广告事件：六个广告位各 10 次曝光，另生成 30 次点击，供广告效果页演示。
+        String[] adUsers = {"U-1001", "U-1002", "U-1003", "U-1005", "U-1006", "U-1007", "U-1008", "U-1009", "U-1010", "U-1011", "U-1012", "U-1001"};
+        for (int slotIndex = 0; slotIndex < AD_SLOT_KEYS.length; slotIndex++) {
+            for (int i = 0; i < 10; i++) {
+                ContentValues v = new ContentValues();
+                v.put("user_id", adUsers[(slotIndex + i) % adUsers.length]);
+                v.put("slot_key", AD_SLOT_KEYS[slotIndex]);
+                v.put("event_type", "impression");
+                v.put("creative", AD_SLOT_NAMES[slotIndex]);
+                v.put("page", AD_SLOT_KEYS[slotIndex].split("_")[0]);
+                v.put("occurred_at", "2026-11-" + String.format(Locale.CHINA, "%02d", Math.min(17, 8 + (i % 9))) + " 10:00:00");
+                db.insert("ad_events", null, v);
+            }
+        }
+        int clickCount = 30;
+        for (int i = 0; i < clickCount; i++) {
+            ContentValues v = new ContentValues();
+            v.put("user_id", adUsers[i % adUsers.length]);
+            v.put("slot_key", AD_SLOT_KEYS[i % AD_SLOT_KEYS.length]);
+            v.put("event_type", "click");
+            v.put("creative", AD_SLOT_NAMES[i % AD_SLOT_NAMES.length]);
+            v.put("page", AD_SLOT_KEYS[i % AD_SLOT_KEYS.length].split("_")[0]);
+            v.put("occurred_at", "2026-11-" + String.format(Locale.CHINA, "%02d", Math.min(17, 9 + (i % 8))) + " " + String.format(Locale.CHINA, "%02d", 10 + (i % 10)) + ":30:00");
+            db.insert("ad_events", null, v);
+        }
+        // 激励视频完成记录
+        for (int i = 0; i < 8; i++) {
+            ContentValues v = new ContentValues();
+            v.put("user_id", adUsers[i % adUsers.length]);
+            v.put("slot_key", "export_rewarded");
+            v.put("event_type", "reward");
+            v.put("creative", "导出页激励视频");
+            v.put("page", "export");
+            v.put("occurred_at", "2026-11-" + String.format(Locale.CHINA, "%02d", Math.min(17, 10 + i)) + " 20:10:00");
+            db.insert("ad_events", null, v);
+        }
     }
 
     private void setting(SQLiteDatabase db, String key, String value) {
@@ -567,6 +617,145 @@ final class Db extends SQLiteOpenHelper {
                     .append(quote(a.action)).append(',').append(quote(a.detail)).append('\n');
         }
         return sb.toString();
+    }
+
+    boolean slotEnabled(String key) {
+        String value = setting("ad_slot_" + key);
+        return value == null || "true".equals(value);
+    }
+
+    SQLiteDatabase writable() { return getWritableDatabase(); }
+
+    /** 服务端账号登录后清空镜像缓存，随后由 RemoteSync 写入服务端最新快照。 */
+    void clearRemoteData() {
+        SQLiteDatabase db = getWritableDatabase();
+        for (String table : new String[]{"users", "expenses", "nodes", "issues", "contracts", "admins", "audits", "ad_events"}) {
+            db.delete(table, null, null);
+        }
+    }
+
+    String adSnapshotJson(int days, String slot) {
+        try {
+            JSONObject root = new JSONObject();
+            JSONObject summary = new JSONObject();
+            JSONArray slots = new JSONArray();
+            JSONArray ranking = new JSONArray();
+            JSONArray clicks = new JSONArray();
+            int totalImpressions = 0, totalClicks = 0, totalRewards = 0;
+            double totalRevenue = 0;
+            java.util.Set<String> clickUsers = new java.util.LinkedHashSet<>();
+            String since = "date('now','-" + Math.max(1, days) + " days')";
+            for (int i = 0; i < AD_SLOT_KEYS.length; i++) {
+                String key = AD_SLOT_KEYS[i];
+                if (slot != null && !slot.isEmpty() && !slot.equals(key)) continue;
+                int[] c = adCounts(key, since);
+                totalImpressions += c[0]; totalClicks += c[1]; totalRewards += c[2];
+                totalRevenue += c[0] / 1000.0 * AD_SLOT_ECPM[i];
+                JSONObject item = new JSONObject();
+                item.put("key", key);
+                item.put("name", AD_SLOT_NAMES[i]);
+                item.put("surface", key.split("_")[0]);
+                item.put("type", key.contains("rewarded") ? "rewarded" : (key.contains("feed") ? "feed" : "banner"));
+                item.put("enabled", slotEnabled(key));
+                item.put("ecpm", AD_SLOT_ECPM[i]);
+                item.put("impressions", c[0]);
+                item.put("clicks", c[1]);
+                item.put("clickUsers", c[3]);
+                item.put("rewards", c[2]);
+                item.put("ctr", c[0] > 0 ? Math.round(c[1] * 10000.0 / c[0]) / 100.0 : 0);
+                item.put("estimatedRevenue", Math.round(c[0] / 1000.0 * AD_SLOT_ECPM[i] * 100.0) / 100.0);
+                slots.put(item);
+            }
+            // 点击用户与次数
+            String slotWhere = (slot == null || slot.isEmpty()) ? "" : " AND slot_key='" + slot.replace("'", "''") + "'";
+            try (Cursor c = getReadableDatabase().rawQuery(
+                    "SELECT user_id, COUNT(*) AS n, MAX(occurred_at) AS last_click FROM ad_events WHERE event_type='click' AND occurred_at >= " + since + slotWhere + " GROUP BY user_id ORDER BY n DESC LIMIT 20", null)) {
+                while (c.moveToNext()) {
+                    String uid = c.getString(0);
+                    int n = c.getInt(1);
+                    User u = user(uid);
+                    JSONObject item = new JSONObject();
+                    item.put("user_id", uid);
+                    item.put("name", u == null ? uid : u.name);
+                    item.put("city", u == null ? "" : u.city);
+                    item.put("clicks", n);
+                    item.put("last_click", c.getString(2));
+                    ranking.put(item);
+                    clickUsers.add(uid);
+                }
+            }
+            try (Cursor c = getReadableDatabase().rawQuery(
+                    "SELECT id, user_id, slot_key, creative, page, occurred_at FROM ad_events WHERE event_type='click' AND occurred_at >= " + since + (slot == null || slot.isEmpty() ? "" : " AND slot_key='" + slot.replace("'", "''") + "'") + " ORDER BY occurred_at DESC LIMIT 50", null)) {
+                while (c.moveToNext()) {
+                    User u = user(c.getString(1));
+                    JSONObject item = new JSONObject();
+                    item.put("id", c.getLong(0));
+                    item.put("user_id", c.getString(1));
+                    item.put("user_name", u == null ? c.getString(1) : u.name);
+                    item.put("city", u == null ? "" : u.city);
+                    item.put("project_name", u == null ? "" : u.projectName);
+                    item.put("slot_key", c.getString(2));
+                    item.put("slot_name", slotName(c.getString(2)));
+                    item.put("creative", c.getString(3));
+                    item.put("page", c.getString(4));
+                    item.put("occurred_at", c.getString(5));
+                    item.put("user_click_count", userClickCount(c.getString(1), since, slot));
+                    clicks.put(item);
+                }
+            }
+            summary.put("impressions", totalImpressions);
+            summary.put("clicks", totalClicks);
+            summary.put("clickUsers", adDistinctUsers(since, slot));
+            summary.put("rewards", totalRewards);
+            summary.put("ctr", totalImpressions > 0 ? Math.round(totalClicks * 10000.0 / totalImpressions) / 100.0 : 0);
+            summary.put("avgClicks", clickUsers.isEmpty() ? 0 : Math.round(totalClicks * 10.0 / clickUsers.size()) / 10.0);
+            summary.put("estimatedRevenue", Math.round(totalRevenue * 100.0) / 100.0);
+            root.put("range", days);
+            root.put("slot", slot == null ? "" : slot);
+            root.put("enabled", true);
+            root.put("summary", summary);
+            root.put("slots", slots);
+            root.put("ranking", ranking);
+            root.put("clicks", clicks);
+            return root.toString();
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
+    private int[] adCounts(String slot, String since) {
+        int[] out = new int[4];
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT SUM(event_type='impression'), SUM(event_type='click'), SUM(event_type='reward'), COUNT(DISTINCT CASE WHEN event_type='click' THEN user_id END) FROM ad_events WHERE slot_key=? AND occurred_at >= " + since,
+                new String[]{slot})) {
+            if (c.moveToFirst()) {
+                out[0] = c.getInt(0); out[1] = c.getInt(1); out[2] = c.getInt(2); out[3] = c.getInt(3);
+            }
+        }
+        return out;
+    }
+
+    private int userClickCount(String userId, String since, String slot) {
+        String slotWhere = (slot == null || slot.isEmpty()) ? "" : " AND slot_key='" + slot.replace("'", "''") + "'";
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM ad_events WHERE user_id=? AND event_type='click' AND occurred_at >= " + since + slotWhere,
+                new String[]{userId})) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        }
+    }
+
+    private int adDistinctUsers(String since, String slot) {
+        String slotWhere = (slot == null || slot.isEmpty()) ? "" : " AND slot_key='" + slot.replace("'", "''") + "'";
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(DISTINCT user_id) FROM ad_events WHERE event_type='click' AND occurred_at >= " + since + slotWhere,
+                null)) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        }
+    }
+
+    private String slotName(String key) {
+        for (int i = 0; i < AD_SLOT_KEYS.length; i++) if (AD_SLOT_KEYS[i].equals(key)) return AD_SLOT_NAMES[i];
+        return key;
     }
 
     private String quote(String value) {

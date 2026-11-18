@@ -128,8 +128,8 @@ docker compose up -d --build
 | GET | `/api/user/contracts` | 合同列表 |
 | GET | `/api/user/contracts/<id>` | 合同详情与付款计划 |
 | POST | `/api/user/contracts/<id>/payments/<seq>/pay` | 支付一期并回写合同 |
-| GET | `/api/user/notifications` | 通知 |
-| GET | `/api/user/ads` | 广告位配置 |
+| GET | `/api/user/ads` | 六个广告位配置 |
+| POST | `/api/user/ads/event` | 广告曝光/点击/关闭/激励完成上报 |
 | POST | `/api/user/export/unlock` | 校验激励视频凭证，签发导出 token |
 | GET | `/api/user/export?token=...` | 导出 CSV |
 
@@ -144,21 +144,20 @@ docker compose up -d --build
 | GET | `/api/admin/overview` | 概览 KPI |
 | GET | `/api/admin/users` | 用户列表 |
 | GET | `/api/admin/users/<id>` | 用户详情 |
-| PATCH | `/api/admin/users/<id>` | 停用 / 启用 / 删除等 |
-| PATCH | `/api/admin/users/<id>/budget` | 调整预算 |
+| GET | `/api/admin/users/<id>` | 用户详情（只读） |
+| PATCH | `/api/admin/users/<id>` | 停用 / 启用 |
 | POST | `/api/admin/users/<id>/revoke-sessions` | 强制下线 |
-| GET | `/api/admin/expenses` | 支出审查 |
-| PATCH | `/api/admin/expenses/<id>/risk` | 标记风险 |
+| DELETE | `/api/admin/users/<id>` | 删除用户（高危） |
+| GET | `/api/admin/expenses` | 支出统计（只读） |
 | GET | `/api/admin/contracts` | 合同台账 |
 | GET | `/api/admin/issues` | 问题列表 |
-| PATCH | `/api/admin/issues/<id>` | 处理问题 |
-| GET | `/api/admin/analytics` | 运营统计 |
+
+| GET | `/api/admin/analytics` | 用户增长/城市/预算排行 |
+| GET | `/api/admin/ads` | 六广告位点击明细与排行 |
 | GET/POST | `/api/admin/admins` | 管理员列表 / 新增 |
 | PATCH | `/api/admin/admins/<id>` | 改角色 / 状态 |
 | POST | `/api/admin/admins/<id>/reset-mfa` | 重置 MFA |
 | GET/PUT | `/api/admin/settings` | 广告 / 导出 / 维护开关 |
-| GET | `/api/admin/audit-logs` | 审计日志 |
-| POST | `/api/admin/notifications` | 发送运营通知 |
 | GET | `/api/admin/export` | 导出审计 CSV |
 
 ## 6. 安全基线

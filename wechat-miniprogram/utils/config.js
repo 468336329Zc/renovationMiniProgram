@@ -3,5 +3,5 @@
 module.exports = {
   BASE_URL: 'http://127.0.0.1:5000/api',
   REWARDED_AD_UNIT_ID: '',
-  VERSION: '1.0.0'
+  VERSION: '1.0.19'
 };

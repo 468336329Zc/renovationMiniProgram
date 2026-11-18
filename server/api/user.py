@@ -480,7 +480,43 @@ def notifications():
 @bp.get("/user/ads")
 @user_required
 def ads():
-    return ok(get_setting("ads"))
+    config = get_setting("ads")
+    slots = config.get("slots") if isinstance(config, dict) else {}
+    result = {**config, "slots": slots or {}}
+    if not result.get("rewarded_ad_required"):
+        result["rewarded_ad_required"] = True
+    return ok(result)
+
+
+AD_EVENTS = {"impression", "click", "close", "reward"}
+
+
+@bp.post("/user/ads/event")
+@user_required
+def ad_event():
+    data = body()
+    slot = text(data.get("slot"), "slot", 40)
+    event = text(data.get("event"), "event", 16)
+    creative = text(data.get("creative"), "creative", 80, required=False) or ""
+    page = text(data.get("page"), "page", 40, required=False) or ""
+    if event not in AD_EVENTS:
+        raise ApiError(400, "invalid_request", "event 只支持 impression/click/close/reward")
+    config = get_setting("ads")
+    slots = config.get("slots") if isinstance(config, dict) else {}
+    slot_config = slots.get(slot) if isinstance(slots, dict) else None
+    if not isinstance(slot_config, dict):
+        raise ApiError(400, "invalid_request", "未知广告位")
+    if not config.get("enabled") or not slot_config.get("enabled", True):
+        raise ApiError(403, "ad_disabled", "该广告位当前未启用")
+    project = _project()
+    event_id = new_id("AE", 5)
+    execute(
+        """INSERT INTO ad_events (id, user_id, project_id, slot_key, event_type, creative, page, occurred_at)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())""",
+        (event_id, g.user["id"], project["id"], slot, event, creative, page),
+    )
+    commit()
+    return ok({"eventId": event_id, "slot": slot, "event": event}, 201)
 
 
 @bp.post("/user/export/unlock")

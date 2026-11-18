@@ -1,57 +1,110 @@
-# 装修记
+# 装修记 · Renovation Mini Program
 
-装修全流程记账工具：**记账、记进度、记问题、记合同、费用统计、导出**。  
-本仓库包含三端：
+装修业主的**装修进度与费用自助记录工具**：预算、支出、9 个施工节点、合同付款、现场问题、统计与 CSV 导出。
 
-| 端 | 目录 | 形态 |
+项目包含三端：
+
+| 端 | 目录 | 技术形态 |
 |---|---|---|
-| 服务端 | `server/` | Flask + PyMySQL，唯一数据库访问入口 |
-| 管理员端 | `android-admin/` | Android 原生 Java，本地 SQLite 演示数据，可打包签名 APK |
-| 用户端 | `wechat-miniprogram/` | 微信小程序，11 个页面，本地演示 / 服务端双模式 |
+| 微信小程序（用户端） | `wechat-miniprogram/` | 微信原生小程序，业务数据全部走服务端 |
+| Android 管理端 | `android-admin/` | Android 原生 Java，APK；本地演示库 + 服务端 MySQL 镜像双数据源 |
+| 服务端 | `server/` | Flask + PyMySQL，唯一数据库入口 |
 
-设计语言：冷白底 + 电光蓝（`#155EEF`）+ 无衬线；管理员端更密、更像数据工作台。  
-已确认原型：用户端 [`app_17j79wqgjur`](https://4mgcp3ffua0r8.doubao.link/app/app_17j79wqgjur)，管理员端 [`app_17j7bwx9cm3`](https://4mgcp3ffua0r8.doubao.link/app/app_17j7bwx9cm3)。
+当前版本：**v1.0.19**（2026-11-18）。
 
----
-
-## 1. 功能
-
-### 用户端（微信小程序）
-
-- 首页：可用余额、预算执行、合同待付、9 节点进度、最近支出、待解决问题、底部广告位。
-- 记账：分类筛选、金额 / 分类 / 付款方式 / 日期 / 备注 / 凭证，新增后进入预算与统计。
-- 进度：9 节点时间轴、状态更新、现场照片上传与预览。
-- 问题：记录问题、优先级、跟进备注、标记已解决。
-- 合同：合同总额 / 已付 / 待付、节点进度、付款计划、逐期付款。
-- 统计：分类构成、月度柱状趋势、预算执行。
-- 导出：看激励视频解锁，服务端校验后签发短时效导出 token，导出 CSV；可复制或保存到小程序本地空间。
-- 双模式：服务端可用时走 API；服务端不可用时自动进入本地演示，所有页面仍可操作。
-
-### 管理员端（Android）
-
-- 登录：本地演示账号 `13800000001 / admin123`，登录写本地审计。
-- 概览：总支出 hero、预算执行率、项目 / 合同待付 / 待解决 KPI、月度折线、费用构成、待解决问题、最近审计。
-- 用户：搜索姓名 / 手机 / 项目、状态筛选、用户卡片、预算执行进度、用户详情四 Tab（概览 / 支出 / 进度 / 合同）。
-- 用户管控：停用 / 启用、调整预算、强制下线、删除用户、审计记录。
-- 数据：支出审查（风险筛选、点击改风险并写审计）、合同台账（已付 / 待付 / 节点进度）。
-- 运营：7 / 30 / 90 天窗口、新增 / 活跃 / 支出、转化漏斗、城市分布、月度柱状、发送运营通知。
-- 管理：广告位 / 导出激励视频 / 维护模式开关、管理员列表与新增、审计日志、导出审计 CSV（文本分享）、退出登录。
-- 数据现状：设备本地 SQLite，种子 12 用户、16 条支出、9 节点、5 问题、4 合同、3 管理员、6 审计、3 设置；不直连 MySQL，后续可切换远程接口。
-
-### 服务端（Flask）
-
-- 管理员与用户两套 JWT：不同密钥、不同 audience；管理员每次请求回查数据库角色与状态。
-- 微信 `code2Session` 只在服务端；小程序包内无 AppSecret、无数据库账号、无管理员密钥。
-- RBAC 默认拒绝；高危操作审计；登录失败锁定；登录 / API 限流。
-- 合同付款按 `contract_payments` 的已付金额与数量回写合同，避免“累加金额但节点数不更新”。
-- 用户首页 `available = budget - spent - contractPending`，与演示数据 `87,154` 一致。
-- 导出必须服务端校验激励视频凭证；CSV 绑定当前用户。
+- 需求基线：[`requirements.md`](requirements.md)
+- 概要设计：[`design-overview.md`](design-overview.md)
+- 详细设计：[`design-detailed.md`](design-detailed.md)
+- 开发准则：[`AGENTS.md`](AGENTS.md)
 
 ---
 
-## 2. 快速启动
+## 1. 产品定位与角色边界
 
-### 2.1 服务端
+### 用户（小程序）
+
+用户在自己的手机上记录整套装修过程：花了多少钱、花在哪、合同付到第几期、施工到哪个节点、现场有什么问题。数据属于用户自己，用户自行维护。
+
+### 管理员（Android APK）
+
+管理端是**平台数据统计台 + 有限系统管控台**，不是审批台：
+
+- 看平台运行数据：用户增长、用户预算规模、合同规模、城市分布、预算排行、广告效果。
+- 有限管控：用户停用/启用、强制下线、删除用户、广告位开关、系统开关。
+- **不审核预算、不改用户账目、不修改合同金额、不干预用户装修决策。**
+- **不提供公告/运营推送、异常队列、决策队列、审计日志展示。**
+
+### 数据源规则
+
+| 账号/端 | 数据源 |
+|---|---|
+| Android `13800000001 / admin123` | 本地 SQLite 演示库 `renovation_admin.db`，离线可用 |
+| Android 其他管理员 | 登录 Flask API，同步 MySQL 到 `renovation_admin_remote.db` 镜像；管控操作提交服务端 |
+| 小程序所有用户 | 只调用 `/api/user/*`，业务数据写 MySQL；API 失败直接提示，不做本地账本回退 |
+
+---
+
+## 2. 小程序功能
+
+| 模块 | 功能 |
+|---|---|
+| 登录 | 微信 `code` 换服务端会话；开发环境保留“服务端开发演示账号”（同样写服务端库） |
+| 首页 | 可用余额、总预算、已支出、合同待付、预算执行、9 节点进度、最近支出、待解决问题、首页广告 |
+| 记账 | 分类、金额、付款方式、日期、备注、凭证；新增后进入预算与统计 |
+| 进度 | 9 节点时间轴、状态更新、现场照片上传/预览 |
+| 问题 | 新增问题、优先级、跟进备注、标记已解决 |
+| 合同 | 合同总额、已付、待付、付款计划、逐期付款 |
+| 统计 | 分类构成、月度趋势、预算执行 |
+| 导出 | 激励视频解锁，服务端校验后签发短时效 token，导出 CSV |
+| 广告 | 六个广告位按服务端配置展示；曝光/点击/关闭/激励完成上报 |
+
+### 六个广告位（与管理员端统计一一对应）
+
+| slot_key | 名称 | 小程序位置 |
+|---|---|---|
+| `home_banner` | 首页 Banner | 首页底部 |
+| `expenses_feed` | 记账页信息流 | 支出列表底部 |
+| `progress_feed` | 进度页信息流 | 进度时间轴底部 |
+| `stats_feed` | 统计页信息流 | 费用统计底部 |
+| `export_rewarded` | 导出页激励视频 | 导出解锁卡片 |
+| `export_feed` | 导出页底部 Banner | 导出页底部 |
+
+广告配置由服务端 `settings.ads.slots` 下发，每个 slot 独立 `enabled/name/type/copy/unitId/ecpm`。管理端统计按 slot 分开，不合并成一个笼统“广告”。
+
+---
+
+## 3. 管理端功能
+
+底部五栏：
+
+1. **概览**：平台总支出、预算执行率、用户数、本月新增、合同总额/待付、待解决问题、月度趋势、费用构成、最近广告点击。
+2. **用户**：搜索姓名/手机/项目、状态筛选、用户卡片、预算执行、城市/装修方式；用户详情四 Tab（概览/支出/进度/合同）。
+3. **合同**：只读合同台账，总额/已付/待付/节点进度/状态筛选。
+4. **统计**：7/30/90 天窗口、新增/活跃/支出、转化漏斗、城市分布、月度趋势、预算 Top5、广告效果。
+5. **系统**：当前数据源、API 地址、用户/合同数量、六广告位开关、管理员身份、服务与合规、退出登录。
+
+### 广告效果详情
+
+- 按周期 7/30/90 天、按广告位筛选。
+- 汇总：曝光、点击、点击用户、激励完成、CTR、预估收入。
+- 用户点击排行：谁点得最多、城市、项目、次数。
+- 点击明细：时间、用户、城市/项目、广告位、素材、该用户第几次点击。
+- 六个广告位分别统计，可直接看出哪个位置有效。
+
+### 用户管控
+
+- 停用/启用：停用后小程序不能登录，已有会话失效。
+- 强制下线：吊销该用户 refresh token。
+- 删除用户：高危操作，二次确认；删除后用户业务数据不可恢复。
+- 预算、支出、合同、问题：只读展示，不提供修改入口。
+
+---
+
+## 4. 快速启动
+
+### 4.1 服务端
+
+依赖：Python 3.10+、MySQL 8.0 / MariaDB 10.6。
 
 ```bash
 cd server
@@ -60,85 +113,71 @@ python3 -m venv .venv
 pip install -r requirements.txt
 cp .env.example .env
 # 修改 DB_PASSWORD / JWT_ADMIN_SECRET / JWT_USER_SECRET / MFA_SECRET_KEY / EXPORT_SECRET
-# 数据库：MySQL 8 或 MariaDB 10.6，库名 renovation，账号 renovation_app
 python scripts/apply_schema.py --seed
 python scripts/create_admin.py --name "张川" --phone "13800000001" --role "超级管理员"
-flask --app app run --host 127.0.0.1 --port 5000
+flask --app app run --host 0.0.0.0 --port 5000
 ```
 
-健康检查：`curl http://127.0.0.1:5000/api/health`。完整接口、部署与验证记录见 [`server/README.md`](server/README.md)。
+健康检查：
 
-### 2.2 Android 管理员端
+```bash
+curl http://127.0.0.1:5000/api/health
+```
+
+建表脚本会依次执行 `001_schema.sql`、`002_seed.sql`、`003_ad_events.sql`；`003` 是广告事件表与六广告位配置迁移。
+
+### 4.2 Android 管理端
 
 ```bash
 cd android-admin
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-./gradlew assembleRelease
+ANDROID_KEY_PASSWORD='<与 keystore 对应的 key 口令>' ./gradlew assembleRelease
 # 产物：app/build/outputs/apk/release/app-release.apk
 ```
 
-本地演示签名固定在 `android-admin/keystore/demo-release.jks`（演示证书，密码 `renovation-demo`）。正式签名通过环境变量覆盖：
-
-```bash
-ANDROID_KEYSTORE_PATH=/abs/release.jks \
-ANDROID_KEYSTORE_PASSWORD=*** \
-ANDROID_KEY_ALIAS=*** \
-ANDROID_KEY_PASSWORD=*** \
-./gradlew assembleRelease
-```
-
-### 2.3 微信小程序
-
-1. 用微信开发者工具导入 `wechat-miniprogram/`。
-2. 把 `project.config.json` 的 `appid` 改成自己的小程序 AppID。
-3. 开发者工具勾选“不校验合法域名”，或将 `utils/config.js` 的 `BASE_URL` 改为已备案 HTTPS 域名并加入 request 合法域名。
-4. 未配置服务端时，点“先看本地演示”即可完整体验；配置服务端后点“微信一键登录”走真实会话。
-
-激励视频：把 `utils/config.js` 的 `REWARDED_AD_UNIT_ID` 填为微信广告位 ID；为空时进入演示解锁。
-
----
-
-## 3. Android 更新签名
-
-管理员端 APK 使用固定 release 证书签名，证书 SHA-256 为：
+本地演示签名文件：`android-admin/keystore/demo-release.jks`；证书 SHA-256：
 
 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`
 
-密钥文件**不提交仓库**，GitHub Actions 从仓库 Secrets 注入；本地构建可用 `ANDROID_KEYSTORE_PATH` 指向自己的 keystore，并提供 `ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。
+同证书签名的后续 APK 可直接覆盖安装，无需卸载旧版。
 
-keystore 使用 JKS 格式以支持独立的 key 口令：store 口令与 key 口令分开，key 口令只通过 `ANDROID_KEY_PASSWORD` Secret 注入。同一证书签名的后续 APK 可以直接覆盖安装，无需卸载旧版。CI 每次构建会自动递增 `versionCode`（`run_number + 1`）和 `versionName`（`1.0.run_number`）。
+登录：
 
-首次配置（在本机已登录 GitHub CLI 后执行）：
+- 本地演示：`13800000001 / admin123`，不访问网络。
+- 服务端账号：登录页填写 API 地址（默认 `http://10.0.2.2:5000/api`）与 MFA（如服务端开启）。登录成功后拉取服务端数据到 remote 镜像库。
 
-```bash
-gh auth login
-ANDROID_KEY_PASSWORD='你的 key 口令' bash scripts/set-github-secrets.sh
-```
+### 4.3 微信小程序
 
-未配置 `ANDROID_KEYSTORE_BASE64` 时，Action 会直接失败并提示，不会再用临时证书生成不可覆盖安装的 APK。
+1. 微信开发者工具导入 `wechat-miniprogram/`。
+2. 修改 `project.config.json` 的 `appid` 为你的小程序 AppID。
+3. 修改 `utils/config.js` 的 `BASE_URL` 为 Flask 地址；真机需 HTTPS 域名并加入 request 合法域名。
+4. 开发者工具可勾选“不校验合法域名”做本地联调。
+5. 登录页点“微信一键登录”走真实 code2Session；点“服务端开发演示账号”走 `/user/login {code:'demo'}`，数据仍写服务端 MySQL。
 
-> 旧 `admin-v1.0.1` 的 CI 临时证书与当前固定证书不同，若已安装旧版，需要先卸载一次；从 `v1.0.2` 起不再需要。
+激励视频：将服务端 `settings.ads.slots.export_rewarded.unitId` 配成微信广告位 ID；开发环境未配置时使用 `adProof=demo` 演示解锁，生产必须接广告平台服务端回调。
 
-## 3. GitHub Actions 签名与 Release
+---
 
-工作流：`.github/workflows/android-release.yml`。推送到 `main` 或手动触发后：
+## 5. 构建、签名与 GitHub Actions
+
+工作流：`.github/workflows/android-release.yml`。推送到 `main` 的 `android-admin/**` 或手动 `workflow_dispatch` 触发：
 
 1. `ubuntu-latest` + JDK 17 + Android SDK 34；
-2. 读取 Secrets 生成正式签名 keystore；未配置时使用仓库内固定的 `android-admin/keystore/demo-release.jks` 演示证书，所有构建证书一致；
-3. 自动把 `versionCode` 设为 `run_number + 1`、`versionName` 设为 `1.0.run_number`，保证每次构建可覆盖安装；
+2. 从 GitHub Secrets 还原 keystore；
+3. 校验 store/key 口令，兼容全角/半角感叹号差异；
 4. `./gradlew assembleRelease`；
-5. `apksigner verify` + `aapt dump badging`；
+5. `apksigner verify --print-certs` + `aapt dump badging`；
 6. 上传 artifact `renovation-admin-apk`；
-7. 发布 GitHub Release `admin-v1.0.<run_number>`，APK 作为 Release 资产。
+7. 发布 GitHub Release `admin-v<versionName>`，APK 作为 Release 资产。
 
-正式签名需要配置以下 Secrets：
+需要的 Secrets：
 
 | Secret | 说明 |
 |---|---|
 | `ANDROID_KEYSTORE_BASE64` | release keystore 的 base64 |
-| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 口令 |
 | `ANDROID_KEY_ALIAS` | key alias |
-| `ANDROID_KEY_PASSWORD` | key 密码 |
+| `ANDROID_KEY_PASSWORD` | key 口令 |
 
 生成 base64：
 
@@ -146,33 +185,67 @@ ANDROID_KEY_PASSWORD='你的 key 口令' bash scripts/set-github-secrets.sh
 base64 -w 0 release.jks > release.jks.b64
 ```
 
-> 当前仓库没有正式 release keystore / Secrets；CI 首次运行会用临时演示 keystore 出包，可安装但不是应用商店正式签名。正式上架前必须替换。
+> 不要把 keystore、口令、`local.properties` 提交到仓库。CI 日志只输出口令哈希前缀，不输出明文。
 
 ---
 
-## 4. 安全基线
+## 6. 服务端接口概览
 
-客户端永远不可信。小程序包可以被反编译，HTTPS 可以被代理抓包，Android 也可以被 root。安全不靠“把接口藏起来”，而靠：
+### 管理端
 
-- 抓到请求也越不了权：所有归属校验从 token 取当前用户，服务端强制带 `user_id` / `project_id` 条件；
-- 管理员与用户 token 分离：不同密钥、不同 audience；用户 token 调管理端接口 401；
-- 管理员每次请求回查数据库：账号停用、角色变更立即生效；
-- RBAC 默认拒绝；高危操作二次确认并写审计；
-- refresh token 只存哈希、7 天轮换、可吊销；
-- 登录失败 5 次 / 15 分钟锁定；登录 5 次 / 60 秒、API 120 次 / 60 秒限流；
-- 导出必须服务端校验激励视频凭证，签发绑定用户的短时效 token；
+- `POST /api/admin/login`
+- `GET /api/admin/overview`
+- `GET /api/admin/users`、`PATCH /api/admin/users/<id>`、`POST /api/admin/users/<id>/revoke-sessions`、`DELETE /api/admin/users/<id>`
+- `GET /api/admin/contracts`
+- `GET /api/admin/expenses`
+- `GET /api/admin/issues`
+- `GET /api/admin/analytics?range=7|30|90`
+- `GET /api/admin/ads?range=7|30|90&slot=<slot_key>`
+- `GET /api/admin/admins`、`POST /api/admin/admins`
+- `GET /api/admin/settings`、`PUT /api/admin/settings`
+- `GET /api/admin/export`
+
+### 小程序
+
+- `POST /api/user/login`（`code=demo` 仅开发环境）
+- `GET /api/user/home`
+- `/api/user/expenses`、`/api/user/nodes`、`/api/user/uploads`
+- `/api/user/issues`、`/api/user/contracts`、`/api/user/contracts/<id>/payments/<seq>/pay`
+- `GET /api/user/expenses/stats`
+- `POST /api/user/export/unlock`、`GET /api/user/export?token=`
+- `GET /api/user/ads`
+- `POST /api/user/ads/event`：`{slot,event,creative,page}`；`event ∈ {impression,click,close,reward}`
+
+广告统计口径：
+
+- 曝光 = `impression` 次数
+- 点击 = `click` 次数
+- 点击用户 = 点击事件 `COUNT(DISTINCT user_id)`
+- CTR = 点击 / 曝光
+- 激励完成 = `reward` 次数
+- 预估收入 = 曝光 / 1000 × ecpm（估算，不代表微信结算）
+
+---
+
+## 7. 安全基线
+
+- 管理员与用户两套 JWT：不同密钥、不同 audience。
+- 管理员每次请求回查数据库角色/状态；停用立即生效。
+- RBAC 默认拒绝；广告统计 `analytics:read`，设置 `settings:write`。
+- 登录失败 5 次 / 15 分钟锁定；登录/API 限流。
+- refresh token 只存哈希、7 天轮换、可吊销。
 - 小程序包内无 AppSecret、数据库账号、管理员密钥。
-
-开发准则见 [`AGENTS.md`](AGENTS.md)；威胁模型与上线清单见 [`server/SECURITY.md`](server/SECURITY.md)。
+- 广告事件只记录用户 ID、项目 ID、广告位、事件类型、素材、页面、时间；不采集设备指纹、不记录明文手机号。
+- 管理端不提供预算修改、支出风险改写、运营通知接口；删除用户/广告开关等服务端写操作写审计，审计仅用于安全追溯。
 
 ---
 
-## 5. 演示数据
+## 8. 演示数据
 
 | 项 | 值 |
 |---|---|
 | 用户 | `U-1001` 张川 / 重庆 |
-| 项目 | `P-1001` 金茂悦 · 110.8㎡法式中古 |
+| 项目 | `P-1001` 金茂悦 · 110.8㎡ 法式中古 |
 | 总预算 | 300,000 |
 | 已支出 | 186,420 |
 | 可用余额 | 87,154 |
@@ -180,17 +253,30 @@ base64 -w 0 release.jks > release.jks.b64
 | 节点 | 7 / 9 完成 |
 | 待解决问题 | 3 条 |
 | 合同 | C-1001 81,000 / 73,500；C-1002 52,000 / 33,074 |
-| 用户登录 | `POST /api/user/login {"code":"demo"}`（仅开发环境） |
-| Android 登录 | `13800000001 / admin123`（本地演示） |
+| Android 本地演示 | `13800000001 / admin123` |
+| 小程序开发演示 | `POST /api/user/login {"code":"demo"}` |
 
-> 服务端演示库被接口测试改过（预算 310,000、额外测试支出、C-1001 第 4 期已付、I-1002 已解决等）。要回到上表初始值，重建 `renovation` 库后重新执行 `sql/001_schema.sql` + `sql/002_seed.sql`；`002_seed.sql` 是 `INSERT IGNORE`，不会覆盖已改值。
+> 本地演示库种子：12 用户、16 支出、9 节点、5 问题、4 合同、3 管理员、6 审计、6 广告位各 10 次曝光 + 30 次点击 + 8 次激励完成。
 
 ---
 
-## 6. 已知边界
+## 9. 已知边界
 
-- Android 未在真机 / 模拟器运行；本机无 adb/设备，UI 运行态未截图验收。APK 已通过 `apksigner` 与 `aapt` 静态验证。
-- 微信小程序未接入真实 AppID/AppSecret；`code2Session` 需真实凭证才能线上验证。真机访问本机 Flask 需 HTTPS 域名与合法域名配置。
-- 激励视频需要真实广告位；当前演示解锁不产生广告收入。
-- 服务端 Docker Compose 已写，但开发机没有 Docker，未在本机验证。
-- 管理员端当前是本地 SQLite 演示数据，不是远程管理生产库；接口已就绪，后续可切换。
+- 本机 MySQL 当前未启动，服务端接口未做端到端联调；仅完成 Python 语法检查。
+- Android 未在真机安装验证；已通过 `assembleRelease`、`apksigner`、`aapt` 静态验证。
+- 管理端远程镜像同步用户/合同/支出/问题/广告/分析；远程用户详情的节点照片未单独拉取，节点列表可能为空。
+- 小程序真实微信登录需真实 AppID/AppSecret 与 HTTPS 合法域名。
+- 激励视频真实解锁需微信广告平台服务端回调；开发环境 `adProof=demo`。
+- 广告预估收入按 ecpm 估算，不是微信广告后台真实结算。
+
+---
+
+## 10. 迭代规范
+
+1. 需求变化 → 同步 `requirements.md`。
+2. 概要设计变化（架构、模块、数据流、部署）→ 同步 `design-overview.md`。
+3. 详细设计变化（表、接口、页面、类、流程）→ 同步 `design-detailed.md`。
+4. 功能变化 → 同步 `README.md` 与版本号。
+5. Git commit message **只能使用中文**。
+
+以上规范同时写入 [`AGENTS.md`](AGENTS.md) 第 6 节。

@@ -56,5 +56,5 @@
   </view>
 
   <button class="btn btn-ghost btn-block logout" bindtap="logout">退出登录</button>
-  <view class="tiny footer">装修记 · 用户端 · 本地演示 / 服务端双模式</view>
+  <view class="tiny footer">装修记 · 用户端 · 业务数据由服务端保存</view>
 </view>

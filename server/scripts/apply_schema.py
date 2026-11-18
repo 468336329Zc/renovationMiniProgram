@@ -2,8 +2,8 @@
 """应用建表/种子 SQL。
 
 用法：
-    python scripts/apply_schema.py                 # 001_schema.sql
-    python scripts/apply_schema.py --seed          # 001 + 002_seed.sql
+    python scripts/apply_schema.py                 # 001_schema.sql + 003_ad_events.sql
+    python scripts/apply_schema.py --seed          # 001 + 002_seed.sql + 003_ad_events.sql
 """
 from __future__ import annotations
 
@@ -53,6 +53,7 @@ def main() -> None:
     run_sql(SQL_DIR / "001_schema.sql", args.user, args.password, args.host, args.port)
     if args.seed:
         run_sql(SQL_DIR / "002_seed.sql", args.user, args.password, args.host, args.port)
+    run_sql(SQL_DIR / "003_ad_events.sql", args.user, args.password, args.host, args.port)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ const config = require('../../utils/config');
 
 Page({
   data: {
-    user: {}, project: {}, initial: '张', modeLabel: '本地演示数据',
+    user: {}, project: {}, initial: '张', modeLabel: '服务端数据',
     budgetText: '¥0', spentText: '¥0', version: config.VERSION
   },
   onShow() {

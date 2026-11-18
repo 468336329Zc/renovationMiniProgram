@@ -15,8 +15,8 @@ android {
         applicationId "com.renovation.admin"
         minSdk 24
         targetSdk 34
-        versionCode 4
-        versionName "1.0.3"
+        versionCode 19
+        versionName "1.0.19"
     }
 
     signingConfigs {

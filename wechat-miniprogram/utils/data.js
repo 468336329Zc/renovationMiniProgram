@@ -1,9 +1,8 @@
 const api = require('./api');
 const config = require('./config');
-const local = require('./local');
 
 function app() { return getApp(); }
-function isApi() { return !!app().globalData.token && !app().globalData.demoMode; }
+function isApi() { return !!app().globalData.token; }
 function errorMessage(error) { return (error && error.message) || '操作失败'; }
 
 function setSession(data) {
@@ -18,19 +17,18 @@ function setSession(data) {
   wx.setStorageSync('demo_mode', false);
 }
 
-function loginDemo() {
-  const user = local.loginDemo();
-  return { demo: true, user };
-}
-
+// 用户端所有业务数据只走服务端数据库；不做本地账本回退。
 function login(code) {
   return api.login(code).then(data => {
     setSession(data);
     return { demo: false, user: data.user };
-  }).catch(error => {
-    const result = loginDemo();
-    result.reason = errorMessage(error);
-    return result;
+  });
+}
+
+function demoLogin() {
+  return api.login('demo').then(data => {
+    setSession(data);
+    return { demo: true, user: data.user };
   });
 }
 
@@ -111,143 +109,96 @@ function normalizeHome(data) {
     nodes: (data.nodes || []).map(normalizeNode),
     openIssues: (data.openIssues || []).map(normalizeIssue),
     contracts: (data.contracts || []).map(normalizeContract),
-    ads: data.ads || { enabled: false }
+    ads: data.ads || { enabled: false, slots: {} }
   };
 }
 
 function home() {
-  if (isApi()) {
-    return api.request('/user/home').then(normalizeHome).catch(() => normalizeHome(local.home()));
-  }
-  return Promise.resolve(normalizeHome(local.home()));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/home').then(normalizeHome);
 }
 
 function expenses(category) {
-  if (isApi()) {
-    const query = category && category !== '全部' ? '?category=' + encodeURIComponent(category) : '';
-    return api.request('/user/expenses' + query).then(data => (data.items || []).map(normalizeExpense))
-      .catch(() => local.expenses(category).map(normalizeExpense));
-  }
-  return Promise.resolve(local.expenses(category).map(normalizeExpense));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  const query = category && category !== '全部' ? '?category=' + encodeURIComponent(category) : '';
+  return api.request('/user/expenses' + query).then(data => (data.items || []).map(normalizeExpense));
 }
 
 function addExpense(payload) {
-  if (isApi()) {
-    return api.request('/user/expenses', 'POST', payload).then(normalizeExpense)
-      .catch(error => {
-        if (error.status === 401) throw error;
-        return normalizeExpense(local.addExpense(payload));
-      });
-  }
-  return Promise.resolve(normalizeExpense(local.addExpense(payload)));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/expenses', 'POST', payload).then(normalizeExpense);
 }
 
 function nodes() {
-  if (isApi()) {
-    return api.request('/user/nodes').then(data => (data || []).map(normalizeNode))
-      .catch(() => local.nodes().map(normalizeNode));
-  }
-  return Promise.resolve(local.nodes().map(normalizeNode));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/nodes').then(data => (data || []).map(normalizeNode));
 }
 
 function updateNode(id, payload) {
-  if (isApi()) {
-    return api.request('/user/nodes/' + id, 'PATCH', payload).then(normalizeNode)
-      .catch(() => normalizeNode(local.updateNode(id, payload)));
-  }
-  return Promise.resolve(normalizeNode(local.updateNode(id, payload)));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/nodes/' + id, 'PATCH', payload).then(normalizeNode);
 }
 
 function addNodePhoto(id, path) {
-  if (isApi()) {
-    return api.uploadNodePhoto(id, path).catch(() => local.addNodePhoto(id, path));
-  }
-  return Promise.resolve(local.addNodePhoto(id, path));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.uploadNodePhoto(id, path);
 }
 
 function issues() {
-  if (isApi()) {
-    return api.request('/user/issues').then(data => (data || []).map(normalizeIssue))
-      .catch(() => local.issues().map(normalizeIssue));
-  }
-  return Promise.resolve(local.issues().map(normalizeIssue));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/issues').then(data => (data || []).map(normalizeIssue));
 }
 
 function addIssue(payload) {
-  if (isApi()) {
-    return api.request('/user/issues', 'POST', payload).then(normalizeIssue)
-      .catch(() => normalizeIssue(local.addIssue(payload)));
-  }
-  return Promise.resolve(normalizeIssue(local.addIssue(payload)));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/issues', 'POST', payload).then(normalizeIssue);
 }
 
 function resolveIssue(id) {
-  const payload = { status: '已解决' };
-  if (isApi()) {
-    return api.request('/user/issues/' + id, 'PATCH', payload)
-      .then(normalizeIssue)
-      .catch(() => normalizeIssue(local.updateIssue(id, payload)));
-  }
-  return Promise.resolve(normalizeIssue(local.updateIssue(id, payload)));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/issues/' + id, 'PATCH', { status: '已解决' }).then(normalizeIssue);
 }
 
 function contracts() {
-  if (isApi()) {
-    return api.request('/user/contracts').then(data => (data || []).map(normalizeContract))
-      .catch(() => local.contracts().map(normalizeContract));
-  }
-  return Promise.resolve(local.contracts().map(normalizeContract));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/contracts').then(data => (data || []).map(normalizeContract));
 }
 
 function contract(id) {
-  if (isApi()) {
-    return api.request('/user/contracts/' + id).then(normalizeContract)
-      .catch(() => normalizeContract(local.contract(id)));
-  }
-  return Promise.resolve(normalizeContract(local.contract(id)));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/contracts/' + id).then(normalizeContract);
 }
 
 function payContract(id, seq) {
-  if (isApi()) {
-    return api.request('/user/contracts/' + id + '/payments/' + seq + '/pay', 'POST', {})
-      .then(normalizeContract)
-      .catch(() => normalizeContract(local.payContract(id, seq)));
-  }
-  return Promise.resolve(normalizeContract(local.payContract(id, seq)));
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/contracts/' + id + '/payments/' + seq + '/pay', 'POST', {}).then(normalizeContract);
 }
 
 function stats() {
-  if (isApi()) {
-    return Promise.all([api.request('/user/home'), api.request('/user/expenses/stats')]).then(([home, data]) => ({
-      summary: home.summary,
-      categories: (data.byCategory || []).map(item => ({ label: item.category, value: Number(item.amount || 0) })),
-      monthly: (data.monthly || []).map(item => ({ label: item.month, value: Number(item.amount || 0) }))
-    })).catch(() => local.stats());
-  }
-  return Promise.resolve(local.stats());
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return Promise.all([api.request('/user/home'), api.request('/user/expenses/stats')]).then(([homeData, data]) => ({
+    summary: homeData.summary,
+    categories: (data.byCategory || []).map(item => ({ label: item.category, value: Number(item.amount || 0) })),
+    monthly: (data.monthly || []).map(item => ({ label: item.month, value: Number(item.amount || 0) }))
+  }));
 }
 
-function unlockExport() {
-  if (isApi()) {
-    return api.request('/user/export/unlock', 'POST', { adProof: 'demo' })
-      .catch(() => ({ token: 'demo' }));
-  }
-  return Promise.resolve({ token: 'demo' });
+function unlockExport(adProof) {
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.request('/user/export/unlock', 'POST', { adProof: adProof || 'demo' });
 }
 
 function exportCsv(token) {
-  if (isApi() && token !== 'demo') {
-    return api.exportCsv(token).catch(() => local.exportCsv());
-  }
-  return Promise.resolve(local.exportCsv());
+  if (!isApi()) return Promise.reject({ message: '请先登录' });
+  return api.exportCsv(token);
 }
 
 function modeLabel() {
-  return isApi() ? '服务端数据' : '本地演示数据';
+  return isApi() ? '服务端数据' : '未登录';
 }
 
 module.exports = {
-  login, loginDemo, home, expenses, addExpense, nodes, updateNode, addNodePhoto,
+  login, demoLogin, home, expenses, addExpense, nodes, updateNode, addNodePhoto,
   issues, addIssue, resolveIssue, contracts, contract, payContract, stats, unlockExport, exportCsv,
-  modeLabel, isApi
+  modeLabel, isApi, errorMessage
 };

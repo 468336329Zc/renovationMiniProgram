@@ -288,3 +288,24 @@ SELECT
   END                                                           AS `budget_used_pct`,
   COALESCE((SELECT COUNT(*) FROM `issues` i WHERE i.`project_id` = p.`id` AND i.`status` = '待解决'), 0) AS `open_issues`
 FROM `projects` p;
+
+
+-- ------------------------------------------------------------
+-- 广告事件：曝光 / 点击 / 关闭 / 激励完成
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ad_events` (
+  `id`          VARCHAR(20)  NOT NULL COMMENT '事件 ID，如 AE-AB12CD34E',
+  `user_id`     VARCHAR(20)  NOT NULL,
+  `project_id`  VARCHAR(20)  NULL,
+  `slot_key`    VARCHAR(40)  NOT NULL COMMENT '广告位键，与 settings.ads.slots 一致',
+  `event_type`  VARCHAR(16)  NOT NULL COMMENT 'impression / click / close / reward',
+  `creative`    VARCHAR(80)  NOT NULL DEFAULT '',
+  `page`        VARCHAR(40)  NOT NULL DEFAULT '',
+  `occurred_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ad_events_slot_time` (`slot_key`, `occurred_at`),
+  KEY `idx_ad_events_user_time` (`user_id`, `occurred_at`),
+  KEY `idx_ad_events_type_time` (`event_type`, `occurred_at`),
+  CONSTRAINT `fk_ad_events_user`
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

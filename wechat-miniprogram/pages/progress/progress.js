@@ -1,8 +1,11 @@
 const data = require('../../utils/data');
+const ads = require('../../utils/ads');
 
 Page({
-  data: { nodes: [], done: 0, total: 0, pct: 0, pctText: '0%' },
-  onShow() { this.load(); },
+  data: {
+    ad: { show: false },
+    adConfig: { enabled: false, slots: {} }, nodes: [], done: 0, total: 0, pct: 0, pctText: '0%' },
+  onShow() { this.load(); this.loadAd(); },
   load() {
     data.nodes().then(nodes => {
       const done = nodes.filter(item => item.status === '已完成').length;
@@ -47,6 +50,14 @@ Page({
     const nodeId = e.currentTarget.dataset.node;
     const index = Number(e.currentTarget.dataset.index);
     const node = this.data.nodes.find(item => item.id === nodeId);
-    if (node && node.photos.length) wx.previewImage({ urls: node.photos, current: node.photos[index] });
-  }
+    if (node && node.photos && node.photos.length) wx.previewImage({ urls: node.photos, current: node.photos[index] });
+  },
+  loadAd() {
+    ads.load().then(cfg => {
+      const ad = ads.view(cfg, 'progress_feed');
+      this.setData({ ad, adConfig: cfg });
+      ads.impression('progress_feed', cfg);
+    }).catch(() => this.setData({ ad: { show: false } }));
+  },
+  tapAd() { ads.click('progress_feed', this.data.adConfig); },
 });

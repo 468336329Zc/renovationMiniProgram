@@ -29,6 +29,6 @@
   </view>
 
   <button class="btn btn-block login-btn" bindtap="wechatLogin" loading="{{loading}}">微信一键登录</button>
-  <button class="btn btn-ghost btn-block login-btn" bindtap="demoLogin">先看本地演示</button>
-  <view class="muted login-note">登录只把 code 发到服务端换取会话；小程序包内不存放 AppSecret、数据库账号或管理员密钥。</view>
+  <button class="btn btn-ghost btn-block login-btn" bindtap="demoLogin" loading="{{loading}}">服务端开发演示账号</button>
+  <view class="muted login-note">登录只把 code 发到服务端换取会话；账本、合同、进度全部写入服务端数据库，本地不再保存真实账本。小程序包内不存放 AppSecret、数据库账号或管理员密钥。</view>
 </view>

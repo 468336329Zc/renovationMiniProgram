@@ -9,6 +9,7 @@ from decimal import Decimal
 from flask import Blueprint, g, request
 
 from api.common import (
+    AD_SLOT_KEYS,
     body,
     csv_response,
     get_setting,
@@ -193,28 +194,6 @@ def update_user(user_id: str):
     return ok(query_one("SELECT * FROM users WHERE id = %s", (user_id,)))
 
 
-@bp.patch("/admin/users/<user_id>/budget")
-@permission_required("users:write")
-def update_budget(user_id: str):
-    user = query_one("SELECT id FROM users WHERE id = %s", (user_id,))
-    if not user:
-        raise ApiError(404, "user_not_found", "用户不存在")
-    project = _project_of_user(user_id)
-    if not project:
-        raise ApiError(404, "project_not_found", "用户还没有项目")
-    data = body()
-    try:
-        budget = Decimal(str(data.get("budget"))).quantize(Decimal("0.01"))
-    except Exception as exc:
-        raise ApiError(400, "invalid_request", "budget 必须是金额") from exc
-    if budget < 0:
-        raise ApiError(400, "invalid_request", "budget 不能为负")
-    execute("UPDATE projects SET budget = %s WHERE id = %s", (budget, project["id"]))
-    write_audit(g.admin["id"], "admin.user.budget", "project", project["id"], {"before": project["budget"], "after": float(budget)})
-    commit()
-    return ok(query_one("SELECT * FROM v_project_finance WHERE project_id = %s", (project["id"],)))
-
-
 @bp.delete("/admin/users/<user_id>")
 @permission_required("users:write")
 def delete_user(user_id: str):
@@ -270,21 +249,6 @@ def list_expenses():
         (*params, size, (page - 1) * size),
     )
     return ok({"items": rows, "page": page, "pageSize": size, "total": total["count"], "amount": total["amount"]})
-
-
-@bp.patch("/admin/expenses/<expense_id>/risk")
-@permission_required("data:write")
-def mark_expense(expense_id: str):
-    expense = query_one("SELECT * FROM expenses WHERE id = %s", (expense_id,))
-    if not expense:
-        raise ApiError(404, "expense_not_found", "支出不存在")
-    status = text(body().get("riskStatus"), "riskStatus", 12)
-    if status not in RISK_STATUS:
-        raise ApiError(400, "invalid_request", "riskStatus 不合法")
-    execute("UPDATE expenses SET risk_status = %s WHERE id = %s", (status, expense_id))
-    write_audit(g.admin["id"], "admin.expense.risk", "expense", expense_id, {"status": status})
-    commit()
-    return ok(query_one("SELECT * FROM expenses WHERE id = %s", (expense_id,)))
 
 
 @bp.get("/admin/contracts")
@@ -438,6 +402,133 @@ def analytics():
     )
 
 
+def _ad_config() -> dict:
+    config = get_setting("ads")
+    if not isinstance(config, dict):
+        return {"enabled": False, "slots": {}}
+    if not isinstance(config.get("slots"), dict):
+        config["slots"] = {}
+    return config
+
+
+def _ad_slot_meta(slot_key: str) -> dict:
+    slots = _ad_config().get("slots", {})
+    value = slots.get(slot_key) if isinstance(slots, dict) else None
+    return value if isinstance(value, dict) else {}
+
+
+@bp.get("/admin/ads")
+@permission_required("analytics:read")
+def ad_analytics():
+    """广告效果：按广告位拆分曝光、点击、点击用户、点击排行与点击明细。"""
+    days = _range_days()
+    since = datetime.now() - timedelta(days=days)
+    slot = request.args.get("slot", "").strip()
+    config = _ad_config()
+    slots_config = config.get("slots", {})
+    known_slots = set(slots_config.keys()) if isinstance(slots_config, dict) else set()
+    if slot and slot not in known_slots:
+        raise ApiError(400, "invalid_request", "未知广告位")
+    where = ["occurred_at >= %s"]
+    params: list = [since]
+    if slot:
+        where.append("slot_key = %s")
+        params.append(slot)
+    where_sql = " AND ".join(where)
+    summary = query_one(
+        f"""SELECT
+              SUM(event_type = 'impression') AS impressions,
+              SUM(event_type = 'click') AS clicks,
+              SUM(event_type = 'reward') AS rewards,
+              COUNT(DISTINCT CASE WHEN event_type = 'click' THEN user_id END) AS click_users
+            FROM ad_events WHERE {where_sql}""",
+        params,
+    ) or {}
+    impressions = int(summary.get("impressions") or 0)
+    clicks = int(summary.get("clicks") or 0)
+    click_users = int(summary.get("click_users") or 0)
+    rewards = int(summary.get("rewards") or 0)
+
+    slot_rows = query_all(
+        """SELECT slot_key,
+                  SUM(event_type = 'impression') AS impressions,
+                  SUM(event_type = 'click') AS clicks,
+                  SUM(event_type = 'reward') AS rewards,
+                  COUNT(DISTINCT CASE WHEN event_type = 'click' THEN user_id END) AS click_users
+           FROM ad_events WHERE occurred_at >= %s GROUP BY slot_key""",
+        (since,),
+    )
+    slot_map = {row["slot_key"]: row for row in slot_rows}
+    slot_items = []
+    for key, meta in (slots_config.items() if isinstance(slots_config, dict) else []):
+        if slot and key != slot:
+            continue
+        row = slot_map.get(key, {})
+        imp = int(row.get("impressions") or 0)
+        clk = int(row.get("clicks") or 0)
+        cur = int(row.get("click_users") or 0)
+        try:
+            ecpm = float(meta.get("ecpm") or 0)
+        except (TypeError, ValueError):
+            ecpm = 0.0
+        slot_items.append({
+            "key": key,
+            "name": meta.get("name") or key,
+            "surface": meta.get("surface") or "",
+            "type": meta.get("type") or "",
+            "enabled": bool(meta.get("enabled", True)),
+            "ecpm": ecpm,
+            "impressions": imp,
+            "clicks": clk,
+            "clickUsers": cur,
+            "rewards": int(row.get("rewards") or 0),
+            "ctr": round(clk / imp * 100, 2) if imp else 0,
+            "estimatedRevenue": round(imp / 1000 * ecpm, 2),
+        })
+
+    ranking = query_all(
+        f"""SELECT e.user_id, u.name, u.city, COUNT(*) AS clicks, MAX(e.occurred_at) AS last_click
+            FROM ad_events e JOIN users u ON u.id = e.user_id
+            WHERE e.event_type = 'click' AND e.occurred_at >= %s {('AND e.slot_key = %s' if slot else '')}
+            GROUP BY e.user_id, u.name, u.city ORDER BY clicks DESC LIMIT 20""",
+        (since, slot) if slot else (since,),
+    )
+
+    clicks_rows = query_all(
+        f"""SELECT e.id, e.user_id, u.name AS user_name, u.city, p.project_name,
+                   e.slot_key, e.creative, e.page, e.occurred_at,
+                   (SELECT COUNT(*) FROM ad_events x
+                    WHERE x.event_type = 'click' AND x.user_id = e.user_id AND x.occurred_at >= %s
+                    {('AND x.slot_key = %s' if slot else '')}) AS user_click_count
+            FROM ad_events e JOIN users u ON u.id = e.user_id
+            LEFT JOIN projects p ON p.id = e.project_id
+            WHERE e.event_type = 'click' AND e.occurred_at >= %s {('AND e.slot_key = %s' if slot else '')}
+            ORDER BY e.occurred_at DESC LIMIT 50""",
+        (since, slot, since, slot) if slot else (since, since),
+    )
+    for row in clicks_rows:
+        meta = _ad_slot_meta(row["slot_key"])
+        row["slot_name"] = meta.get("name") or row["slot_key"]
+    revenue = round(sum(item["estimatedRevenue"] for item in slot_items), 2)
+    return ok({
+        "range": days,
+        "slot": slot,
+        "enabled": bool(config.get("enabled")),
+        "summary": {
+            "impressions": impressions,
+            "clicks": clicks,
+            "clickUsers": click_users,
+            "rewards": rewards,
+            "ctr": round(clicks / impressions * 100, 2) if impressions else 0,
+            "avgClicks": round(clicks / click_users, 1) if click_users else 0,
+            "estimatedRevenue": revenue,
+        },
+        "slots": slot_items,
+        "ranking": ranking,
+        "clicks": clicks_rows,
+    })
+
+
 @bp.get("/admin/admins")
 @permission_required("admins:read")
 def list_admins():
@@ -544,6 +635,21 @@ def update_settings():
     for key, value in data.items():
         if not isinstance(value, dict):
             raise ApiError(400, "invalid_request", f"{key} 必须是对象")
+        if key == "ads":
+            slots = value.get("slots")
+            if slots is not None:
+                if not isinstance(slots, dict):
+                    raise ApiError(400, "invalid_request", "ads.slots 必须是对象")
+                unknown = set(slots) - set(AD_SLOT_KEYS)
+                if unknown:
+                    raise ApiError(400, "invalid_request", f"未知广告位: {', '.join(sorted(unknown))}")
+                current = get_setting("ads")
+                merged = dict(current.get("slots") or {}) if isinstance(current, dict) else {}
+                for slot_key, slot_value in slots.items():
+                    if not isinstance(slot_value, dict):
+                        raise ApiError(400, "invalid_request", f"广告位 {slot_key} 必须是对象")
+                    merged[slot_key] = {**merged.get(slot_key, {}), **slot_value, "key": slot_key}
+                value = {**value, "slots": merged}
         save_setting(key, value, g.admin["id"])
     write_audit(g.admin["id"], "admin.settings.updated", "setting", "", {"keys": list(data.keys())})
     commit()
@@ -568,24 +674,6 @@ def audit_logs():
         (*params, size, (page - 1) * size),
     )
     return ok({"items": rows, "total": total["count"]})
-
-
-@bp.post("/admin/notifications")
-@permission_required("notifications:write")
-def send_notification():
-    data = body()
-    title = text(data.get("title"), "title", 120)
-    body_text = text(data.get("body"), "body", 1000, required=False)
-    audience = text(data.get("audience"), "audience", 20, required=False) or "all"
-    if audience not in {"all", "active", "over_budget", "city"}:
-        raise ApiError(400, "invalid_request", "audience 不合法")
-    execute(
-        "INSERT INTO notifications (title, body, audience, sent_by) VALUES (%s, %s, %s, %s)",
-        (title, body_text, audience, g.admin["id"]),
-    )
-    write_audit(g.admin["id"], "admin.notification.sent", "notification", "", {"audience": audience})
-    commit()
-    return ok({"sent": True}, 201)
 
 
 @bp.get("/admin/export")

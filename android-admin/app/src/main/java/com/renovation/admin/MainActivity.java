@@ -23,6 +23,9 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,7 +48,8 @@ public class MainActivity extends Activity {
     }
 
     private void setup() {
-        db = Db.get(this);
+        Session.load(this);
+        db = Session.demo ? Db.get(this) : Db.getRemote(this);
         getWindow().setStatusBarColor(Ui.BG);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
@@ -72,19 +76,20 @@ public class MainActivity extends Activity {
         LinearLayout left = Ui.column(this);
         TextView title = Ui.text(this, "管理台", 24, true, Ui.INK);
         left.addView(title);
-        left.addView(Ui.text(this, "装修记 / 数据工作台", 10, true, Ui.BLUE));
+        left.addView(Ui.text(this, Session.demo ? "装修记 / 数据工作台 · 本地演示" : "装修记 / 数据工作台 · 服务端数据", 10, true, Ui.BLUE));
         LinearLayout.LayoutParams leftLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         left.setLayoutParams(leftLp);
         header.addView(left);
 
         LinearLayout right = Ui.column(this);
         right.setGravity(Gravity.END);
-        TextView avatar = Ui.text(this, "张", 13, true, Color.WHITE);
+        String initial = Session.name == null || Session.name.isEmpty() ? "管" : Session.name.substring(0, 1);
+        TextView avatar = Ui.text(this, initial, 13, true, Color.WHITE);
         avatar.setGravity(Gravity.CENTER);
         avatar.setBackground(Ui.rounded(Ui.BLUE_DARK, Ui.dp(this, 12), Color.TRANSPARENT, 0));
         avatar.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 36), Ui.dp(this, 36)));
         right.addView(avatar);
-        right.addView(Ui.text(this, "张川 · 超管", 9, false, Ui.MUTED));
+        right.addView(Ui.text(this, Session.name + " · " + Session.role, 9, false, Ui.MUTED));
         header.addView(right);
         return header;
     }
@@ -92,7 +97,7 @@ public class MainActivity extends Activity {
     private View buildTabs() {
         LinearLayout nav = Ui.row(this);
         nav.setPadding(Ui.dp(this, 12), Ui.dp(this, 2), Ui.dp(this, 12), Ui.dp(this, 10));
-        String[] names = {"概览", "用户", "数据", "运营", "管理"};
+        String[] names = {"概览", "用户", "合同", "统计", "系统"};
         tabs = new TextView[names.length];
         for (int i = 0; i < names.length; i++) {
             TextView tab = Ui.text(this, names[i], 12, true, Ui.MUTED);
@@ -121,7 +126,7 @@ public class MainActivity extends Activity {
         switch (index) {
             case 0: buildOverview(); break;
             case 1: buildUsers(); break;
-            case 2: buildData(); break;
+            case 2: buildContracts(); break;
             case 3: buildOperations(); break;
             default: buildManage(); break;
         }
@@ -141,7 +146,7 @@ public class MainActivity extends Activity {
         for (Db.Contract c : db.contracts(null)) pending += c.getPending();
         int openIssues = db.issues(true).size();
         int projects = users.size();
-        int audits7 = db.count("audits", null);
+        int adClicks = adInt("clicks");
         double pct = budget == 0 ? 0 : spent / budget * 100;
 
         LinearLayout hero = Ui.card(this);
@@ -151,7 +156,7 @@ public class MainActivity extends Activity {
         hero.setBackground(heroBg);
         LinearLayout heroTop = Ui.row(this);
         heroTop.addView(Ui.text(this, "PLATFORM SPEND", 10, true, Color.parseColor("#9FB8FF")));
-        TextView live = Ui.pill(this, "LIVE · 本地", Color.parseColor("#B8C8FF"), Color.parseColor("#213E82"));
+        TextView live = Ui.pill(this, Session.demo ? "LIVE · 本地" : "LIVE · 服务端", Color.parseColor("#B8C8FF"), Color.parseColor("#213E82"));
         LinearLayout.LayoutParams liveLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         liveLp.leftMargin = Ui.dp(this, 10);
         live.setLayoutParams(liveLp);
@@ -176,7 +181,7 @@ public class MainActivity extends Activity {
 
         LinearLayout grid2 = Ui.row(this);
         grid2.addView(kpi("合同总额", ChartView.shortMoney(db.sum("contracts", "total_amount", null)), "待付 " + ChartView.shortMoney(pending), 1f));
-        grid2.addView(kpi("审计动作", String.valueOf(audits7), "本地已记录", 1f));
+        grid2.addView(kpi("广告点击", String.valueOf(adClicks), "近 30 天 · 全部广告位", 1f));
         addWithMargins(grid2, 0, 8, 0, 0);
 
         content.addView(section("支出趋势", "按月汇总 · 单位元"));
@@ -203,10 +208,30 @@ public class MainActivity extends Activity {
         }
         if (issues.isEmpty()) content.addView(empty("当前没有待解决问题"));
 
-        content.addView(section("最近审计", "谁在什么时候改了什么"));
-        LinearLayout auditCard = Ui.card(this);
-        for (Db.Audit audit : db.audits(4)) auditCard.addView(auditRow(audit));
-        addWithMargins(auditCard, 0, 0, 0, 0);
+        content.addView(section("最近广告点击", "谁在什么时候点了哪个广告位"));
+        LinearLayout clickCard = Ui.card(this);
+        JSONArray recentClicks = adSnapshot().optJSONArray("clicks");
+        int clickShown = 0;
+        if (recentClicks != null) {
+            for (int i = 0; i < recentClicks.length() && clickShown < 4; i++) {
+                JSONObject item = recentClicks.optJSONObject(i);
+                if (item == null) continue;
+                clickShown++;
+                LinearLayout row = Ui.column(this);
+                row.setPadding(0, Ui.dp(this, 7), 0, Ui.dp(this, 7));
+                LinearLayout top = Ui.row(this);
+                top.addView(Ui.text(this, item.optString("user_name", item.optString("user_id")), 11, true, Ui.INK));
+                TextView when = Ui.text(this, item.optString("occurred_at"), 9, false, Ui.MUTED);
+                when.setGravity(Gravity.END);
+                when.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                top.addView(when);
+                row.addView(top);
+                row.addView(Ui.text(this, item.optString("slot_name", item.optString("slot_key")) + " · 第 " + item.optInt("user_click_count") + " 次点击", 9, true, Ui.BLUE));
+                clickCard.addView(row);
+            }
+        }
+        if (clickShown == 0) clickCard.addView(Ui.text(this, "还没有广告点击记录", 11, false, Ui.MUTED));
+        addWithMargins(clickCard, 0, 0, 0, 0);
     }
 
     private View heroStat(String label, String value, String unit) {
@@ -347,79 +372,56 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void buildData() {
-        content.addView(section("支出审查", "点击卡片调整风险标记"));
-        final LinearLayout list = Ui.column(this);
+    private void buildContracts() {
+        content.addView(section("合同台账", "总额、已付、待付与合同风险，只读查看，不修改用户合同"));
+        double total = 0, paid = 0;
+        List<Db.Contract> contracts = db.contracts(null);
+        for (Db.Contract contract : contracts) {
+            total += contract.total;
+            paid += contract.paid;
+        }
+        LinearLayout summary = Ui.row(this);
+        summary.addView(kpi("合同总额", ChartView.shortMoney(total), contracts.size() + " 份合同", 1f));
+        summary.addView(kpi("已付金额", ChartView.shortMoney(paid), "待付 " + ChartView.shortMoney(Math.max(total - paid, 0)), 1f));
+        addWithMargins(summary, 0, 10, 0, 0);
+
         LinearLayout chips = Ui.row(this);
-        String[] risks = {"全部", "正常", "超支", "异常", "待核"};
-        final TextView[] chipViews = new TextView[risks.length];
-        for (int i = 0; i < risks.length; i++) {
-            TextView chip = Ui.pill(this, risks[i], Ui.MUTED, Color.parseColor("#EEF2F9"));
+        String[] statuses = {"全部", "执行中", "已完工", "待付", "风险"};
+        final LinearLayout list = Ui.column(this);
+        final TextView[] chipViews = new TextView[statuses.length];
+        for (int i = 0; i < statuses.length; i++) {
+            TextView chip = Ui.pill(this, statuses[i], Ui.MUTED, Color.parseColor("#EEF2F9"));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, 0, Ui.dp(this, 7), 0);
+            lp.setMargins(0, Ui.dp(this, 1), Ui.dp(this, 7), 0);
             chip.setLayoutParams(lp);
-            final String risk = risks[i];
+            final String status = statuses[i];
             chip.setOnClickListener(v -> {
                 for (int j = 0; j < chipViews.length; j++) {
-                    boolean on = risks[j].equals(risk);
+                    boolean on = statuses[j].equals(status);
                     chipViews[j].setTextColor(on ? Color.WHITE : Ui.MUTED);
                     chipViews[j].setBackground(Ui.rounded(on ? Ui.BLUE : Color.parseColor("#EEF2F9"), Ui.dp(this, 999), Color.TRANSPARENT, 0));
                 }
-                renderExpenses(list, risk);
+                renderContracts(list, status);
             });
             chipViews[i] = chip;
             chips.addView(chip);
         }
         content.addView(chips);
         content.addView(list);
-        renderExpenses(list, "全部");
-
-        content.addView(section("合同台账", "已付 / 应付 / 风险"));
-        for (Db.Contract contract : db.contracts(null)) content.addView(contractCard(contract));
+        renderContracts(list, "全部");
+        if (contracts.isEmpty()) content.addView(empty("服务端还没有合同数据"));
     }
 
-    private void renderExpenses(LinearLayout list, String risk) {
+    private void renderContracts(LinearLayout list, String status) {
         list.removeAllViews();
-        List<Db.Expense> expenses = db.expenses(risk, null);
-        if (expenses.isEmpty()) { list.addView(empty("没有匹配的支出")); return; }
-        for (Db.Expense expense : expenses) {
-            LinearLayout card = Ui.card(this);
-            card.setOnClickListener(v -> showRiskDialog(expense));
-            LinearLayout top = Ui.row(this);
-            LinearLayout left = Ui.column(this);
-            left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            left.addView(Ui.text(this, expense.category, 13, true, Ui.INK));
-            left.addView(Ui.text(this, expense.userName + " · " + expense.spentAt, 9, false, Ui.MUTED));
-            top.addView(left);
-            top.addView(Ui.text(this, ChartView.money(expense.amount), 16, true, Ui.INK));
-            card.addView(top);
-            LinearLayout footer = Ui.row(this);
-            footer.setPadding(0, Ui.dp(this, 8), 0, 0);
-            footer.addView(Ui.pill(this, expense.risk, Ui.statusFg(expense.risk), Ui.statusBg(expense.risk)));
-            TextView note = Ui.text(this, expense.note, 9, false, Ui.MUTED);
-            note.setPadding(Ui.dp(this, 8), 0, 0, 0);
-            note.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            footer.addView(note);
-            card.addView(footer);
-            LinearLayout.LayoutParams cardLp = Ui.matchWrap(this);
-            cardLp.setMargins(0, Ui.dp(this, 8), 0, 0);
-            card.setLayoutParams(cardLp);
-            list.addView(card);
+        List<Db.Contract> contracts = db.contracts(null);
+        boolean any = false;
+        for (Db.Contract contract : contracts) {
+            if (!"全部".equals(status) && !status.equals(contract.status)) continue;
+            any = true;
+            list.addView(contractCard(contract));
         }
-    }
-
-    private void showRiskDialog(Db.Expense expense) {
-        String[] values = {"正常", "超支", "异常", "待核"};
-        new AlertDialog.Builder(this)
-                .setTitle(expense.category + " · " + ChartView.money(expense.amount))
-                .setItems(values, (dialog, which) -> {
-                    db.updateRisk(expense.id, values[which]);
-                    db.addAudit("A-01", "expense.risk", "标记 " + expense.category + " 为" + values[which]);
-                    Toast.makeText(this, "已更新风险标记", Toast.LENGTH_SHORT).show();
-                    selectTab(2);
-                })
-                .setNegativeButton("取消", null)
-                .show();
+        if (!any) list.addView(empty("没有匹配的合同"));
     }
 
     private View contractCard(Db.Contract contract) {
@@ -545,89 +547,358 @@ public class MainActivity extends Activity {
         chartCard.addView(chart);
         addWithMargins(chartCard, 0, 0, 0, 0);
 
-        TextView notify = Ui.button(this, "发送运营通知", true);
-        LinearLayout.LayoutParams notifyLp = Ui.matchWrap(this);
-        notifyLp.topMargin = Ui.dp(this, 18);
-        notify.setLayoutParams(notifyLp);
-        notify.setOnClickListener(v -> showNoticeDialog());
-        body.addView(notify);
+        body.addView(section("预算排行", "按用户当前预算，不修改用户预算"));
+        LinearLayout rankCard = Ui.card(this);
+        List<Db.User> budgetUsers = db.users(null, null);
+        budgetUsers.sort((a, b) -> Double.compare(b.budget, a.budget));
+        for (int i = 0; i < Math.min(5, budgetUsers.size()); i++) {
+            Db.User user = budgetUsers.get(i);
+            LinearLayout row = Ui.row(this);
+            row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
+            TextView index = Ui.text(this, String.valueOf(i + 1), 11, true, Ui.BLUE);
+            index.setGravity(Gravity.CENTER);
+            index.setBackground(Ui.rounded(Ui.BLUE_SOFT, Ui.dp(this, 8), Color.TRANSPARENT, 0));
+            index.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 24), Ui.dp(this, 24)));
+            row.addView(index);
+            LinearLayout left = Ui.column(this);
+            left.setPadding(Ui.dp(this, 10), 0, 0, 0);
+            left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+            left.addView(Ui.text(this, user.name + " · " + user.city, 11, true, Ui.INK));
+            left.addView(Ui.text(this, user.projectName, 9, false, Ui.MUTED));
+            row.addView(left);
+            row.addView(Ui.text(this, ChartView.shortMoney(user.budget), 13, true, Ui.BLUE));
+            rankCard.addView(row);
+        }
+        if (budgetUsers.isEmpty()) rankCard.addView(Ui.text(this, "还没有用户预算数据", 11, false, Ui.MUTED));
+        addWithMargins(rankCard, 0, 0, 0, 0);
+
+        body.addView(section("广告效果", "六个广告位拆分曝光、点击与点击排行"));
+        JSONObject adRoot = adSnapshot();
+        JSONObject adSummary = adRoot.optJSONObject("summary");
+        LinearLayout adCard = Ui.card(this);
+        LinearLayout adMetrics = Ui.row(this);
+        adMetrics.addView(kpi("曝光", String.valueOf(adSummary == null ? 0 : adSummary.optInt("impressions", 0)), "近 30 天", 1f));
+        adMetrics.addView(kpi("点击", String.valueOf(adSummary == null ? 0 : adSummary.optInt("clicks", 0)), "点击用户 " + (adSummary == null ? 0 : adSummary.optInt("clickUsers", 0)), 1f));
+        adCard.addView(adMetrics);
+        adCard.addView(Ui.spacer(this, 10));
+        JSONArray slots = adRoot.optJSONArray("slots");
+        if (slots != null) {
+            for (int i = 0; i < slots.length(); i++) {
+                JSONObject slot = slots.optJSONObject(i);
+                if (slot == null) continue;
+                LinearLayout row = Ui.row(this);
+                row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
+                LinearLayout left = Ui.column(this);
+                left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                left.addView(Ui.text(this, slot.optString("name", slot.optString("key")), 11, true, Ui.INK));
+                left.addView(Ui.text(this, "曝光 " + slot.optInt("impressions") + " · 点击 " + slot.optInt("clicks") + " · 点击率 " + slot.optDouble("ctr") + "%", 9, false, Ui.MUTED));
+                row.addView(left);
+                row.addView(Ui.pill(this, slot.optBoolean("enabled", true) ? "启用" : "关闭", slot.optBoolean("enabled", true) ? Ui.BLUE : Ui.MUTED, slot.optBoolean("enabled", true) ? Ui.BLUE_SOFT : Color.parseColor("#EEF2F9")));
+                adCard.addView(row);
+            }
+        }
+        TextView detail = Ui.button(this, "查看点击明细与用户排行", false);
+        LinearLayout.LayoutParams detailLp = Ui.matchWrap(this);
+        detailLp.topMargin = Ui.dp(this, 10);
+        detail.setLayoutParams(detailLp);
+        detail.setOnClickListener(v -> showAdDetail(""));
+        adCard.addView(detail);
+        addWithMargins(adCard, 0, 0, 0, 0);
     }
 
-    private void showNoticeDialog() {
-        LinearLayout form = Ui.column(this);
-        form.setPadding(Ui.dp(this, 20), Ui.dp(this, 8), Ui.dp(this, 20), 0);
-        EditText title = Ui.input(this, "通知标题");
-        EditText body = Ui.input(this, "通知内容");
-        form.addView(title);
-        form.addView(Ui.spacer(this, 10));
-        form.addView(body);
+    private JSONObject adSnapshot() {
+        return adSnapshot("");
+    }
+
+    private JSONObject adSnapshot(String slot) {
+        try {
+            String raw;
+            if (Session.demo) {
+                raw = db.adSnapshotJson(30, slot == null ? "" : slot);
+            } else if (slot != null && !slot.isEmpty()) {
+                raw = db.setting("ads_slot_" + slot);
+                if (raw == null || raw.isEmpty()) raw = db.setting("ads_snapshot");
+            } else {
+                raw = db.setting("ads_snapshot");
+            }
+            if (raw == null || raw.isEmpty()) return new JSONObject();
+            JSONObject root = new JSONObject(raw);
+            if (slot != null && !slot.isEmpty() && root.optJSONArray("slots") != null
+                    && root.optJSONArray("slots").length() > 1) {
+                root = filterAdSnapshot(root, slot);
+            }
+            return root;
+        } catch (Exception e) {
+            return new JSONObject();
+        }
+    }
+
+    private JSONObject filterAdSnapshot(JSONObject root, String slot) throws Exception {
+        JSONObject copy = new JSONObject(root.toString());
+        JSONArray slots = root.optJSONArray("slots");
+        JSONArray filtered = new JSONArray();
+        JSONObject summary = new JSONObject();
+        int impressions = 0, clicks = 0, clickUsers = 0, rewards = 0;
+        if (slots != null) {
+            for (int i = 0; i < slots.length(); i++) {
+                JSONObject item = slots.optJSONObject(i);
+                if (item == null) continue;
+                if (slot.equals(item.optString("key"))) {
+                    filtered.put(item);
+                    impressions += item.optInt("impressions");
+                    clicks += item.optInt("clicks");
+                    clickUsers += item.optInt("clickUsers");
+                    rewards += item.optInt("rewards");
+                }
+            }
+        }
+        summary.put("impressions", impressions);
+        summary.put("clicks", clicks);
+        summary.put("clickUsers", clickUsers);
+        summary.put("rewards", rewards);
+        summary.put("ctr", impressions > 0 ? Math.round(clicks * 10000.0 / impressions) / 100.0 : 0);
+        summary.put("avgClicks", clickUsers > 0 ? Math.round(clicks * 10.0 / clickUsers) / 10.0 : 0);
+        summary.put("estimatedRevenue", 0);
+        JSONArray clicksArray = root.optJSONArray("clicks");
+        JSONArray filteredClicks = new JSONArray();
+        if (clicksArray != null) {
+            for (int i = 0; i < clicksArray.length(); i++) {
+                JSONObject item = clicksArray.optJSONObject(i);
+                if (item != null && slot.equals(item.optString("slot_key"))) filteredClicks.put(item);
+            }
+        }
+        copy.put("summary", summary);
+        copy.put("slots", filtered);
+        copy.put("clicks", filteredClicks);
+        copy.put("slot", slot);
+        return copy;
+    }
+
+    private int adInt(String key) {
+        JSONObject root = adSnapshot();
+        JSONObject summary = root.optJSONObject("summary");
+        return summary == null ? 0 : summary.optInt(key, 0);
+    }
+
+    private void showAdDetail(final String slot) {
+        JSONObject root = adSnapshot(slot);
+        JSONObject summary = root.optJSONObject("summary");
+        ScrollView scrollView = new ScrollView(this);
+        LinearLayout box = Ui.column(this);
+        box.setPadding(Ui.dp(this, 18), Ui.dp(this, 8), Ui.dp(this, 18), Ui.dp(this, 8));
+
+        TextView title = Ui.text(this, "广告效果详情", 18, true, Ui.INK);
+        box.addView(title);
+        box.addView(Ui.text(this, Session.demo ? "本地演示数据 · 近 30 天" : "服务端 MySQL 数据 · 近 30 天", 10, false, Ui.MUTED));
+        box.addView(Ui.spacer(this, 12));
+
+        LinearLayout metrics = Ui.row(this);
+        metrics.addView(kpi("曝光", String.valueOf(summary == null ? 0 : summary.optInt("impressions")), "次", 1f));
+        metrics.addView(kpi("点击", String.valueOf(summary == null ? 0 : summary.optInt("clicks")), "点击用户 " + (summary == null ? 0 : summary.optInt("clickUsers")), 1f));
+        metrics.addView(kpi("激励完成", String.valueOf(summary == null ? 0 : summary.optInt("rewards")), "次", 1f));
+        box.addView(metrics);
+        box.addView(Ui.spacer(this, 8));
+        if (summary != null) {
+            box.addView(Ui.text(this, "点击率 " + summary.optDouble("ctr") + "% · 人均 " + summary.optDouble("avgClicks") + " 次 · 预估收入 ¥" + summary.optDouble("estimatedRevenue", 0), 10, true, Ui.BLUE));
+        }
+
+        box.addView(Ui.spacer(this, 16));
+        box.addView(Ui.text(this, "按广告位", 13, true, Ui.INK));
+        JSONArray slots = root.optJSONArray("slots");
+        if (slots != null) {
+            for (int i = 0; i < slots.length(); i++) {
+                JSONObject item = slots.optJSONObject(i);
+                if (item == null) continue;
+                LinearLayout row = Ui.row(this);
+                row.setPadding(0, Ui.dp(this, 7), 0, Ui.dp(this, 7));
+                LinearLayout left = Ui.column(this);
+                left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                left.addView(Ui.text(this, item.optString("name", item.optString("key")), 11, true, Ui.INK));
+                left.addView(Ui.text(this, item.optString("key") + " · 曝光 " + item.optInt("impressions") + " · 点击 " + item.optInt("clicks") + " · 用户 " + item.optInt("clickUsers"), 9, false, Ui.MUTED));
+                row.addView(left);
+                TextView action = Ui.text(this, slot.isEmpty() ? "查看 ›" : "筛选中", 10, true, Ui.BLUE);
+                action.setOnClickListener(v -> {
+                    if (slot.isEmpty()) {
+                        showAdDetail(item.optString("key"));
+                    }
+                });
+                row.addView(action);
+                box.addView(row);
+            }
+        }
+        if (!slot.isEmpty()) {
+            TextView clear = Ui.ghostButton(this, "查看全部广告位");
+            LinearLayout.LayoutParams lp = Ui.matchWrap(this);
+            lp.topMargin = Ui.dp(this, 6);
+            clear.setLayoutParams(lp);
+            clear.setOnClickListener(v -> showAdDetail(""));
+            box.addView(clear);
+        }
+
+        box.addView(Ui.spacer(this, 16));
+        box.addView(Ui.text(this, "用户点击排行", 13, true, Ui.INK));
+        JSONArray ranking = root.optJSONArray("ranking");
+        if (ranking != null && ranking.length() > 0) {
+            for (int i = 0; i < Math.min(5, ranking.length()); i++) {
+                JSONObject item = ranking.optJSONObject(i);
+                if (item == null) continue;
+                LinearLayout row = Ui.row(this);
+                row.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 6));
+                row.addView(Ui.text(this, String.valueOf(i + 1), 11, true, Ui.BLUE));
+                LinearLayout left = Ui.column(this);
+                left.setPadding(Ui.dp(this, 10), 0, 0, 0);
+                left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                left.addView(Ui.text(this, item.optString("name", item.optString("user_id")), 11, true, Ui.INK));
+                left.addView(Ui.text(this, item.optString("city", "") + " · 最近 " + item.optString("last_click", ""), 9, false, Ui.MUTED));
+                row.addView(left);
+                row.addView(Ui.text(this, item.optInt("clicks") + " 次", 12, true, Ui.ORANGE));
+                box.addView(row);
+            }
+        } else {
+            box.addView(Ui.text(this, "这个时间窗口还没有点击用户", 10, false, Ui.MUTED));
+        }
+
+        box.addView(Ui.spacer(this, 16));
+        box.addView(Ui.text(this, "点击明细", 13, true, Ui.INK));
+        JSONArray clicks = root.optJSONArray("clicks");
+        if (clicks != null && clicks.length() > 0) {
+            for (int i = 0; i < Math.min(8, clicks.length()); i++) {
+                JSONObject item = clicks.optJSONObject(i);
+                if (item == null) continue;
+                LinearLayout row = Ui.column(this);
+                row.setPadding(0, Ui.dp(this, 7), 0, Ui.dp(this, 7));
+                LinearLayout top = Ui.row(this);
+                top.addView(Ui.text(this, item.optString("user_name", item.optString("user_id")), 11, true, Ui.INK));
+                TextView count = Ui.text(this, "第 " + item.optInt("user_click_count") + " 次", 9, true, Ui.BLUE);
+                count.setGravity(Gravity.END);
+                count.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                top.addView(count);
+                row.addView(top);
+                row.addView(Ui.text(this, item.optString("occurred_at") + " · " + item.optString("slot_name", item.optString("slot_key")), 9, false, Ui.MUTED));
+                box.addView(row);
+            }
+        } else {
+            box.addView(Ui.text(this, "这个广告位还没有点击记录", 10, false, Ui.MUTED));
+        }
+        scrollView.addView(box);
         new AlertDialog.Builder(this)
-                .setTitle("发送运营通知")
-                .setView(form)
-                .setPositiveButton("发送", (dialog, which) -> {
-                    String t = title.getText().toString().trim();
-                    if (t.isEmpty()) { Toast.makeText(this, "请填写标题", Toast.LENGTH_SHORT).show(); return; }
-                    db.addAudit("A-02", "notification.send", t + " · " + body.getText().toString().trim());
-                    Toast.makeText(this, "通知已记录到审计", Toast.LENGTH_SHORT).show();
-                    selectTab(3);
-                })
-                .setNegativeButton("取消", null)
+                .setView(scrollView)
+                .setPositiveButton("关闭", null)
                 .show();
     }
 
     private void buildManage() {
-        content.addView(section("产品开关", "只影响本地演示行为"));
-        LinearLayout settingsCard = Ui.card(this);
-        settingsCard.addView(settingRow("首页广告位", "在首页底部出现，不遮挡记账", "ads"));
-        settingsCard.addView(settingRow("导出激励视频", "导出前需要完成解锁", "export"));
-        settingsCard.addView(settingRow("维护模式", "暂停用户端写入入口", "maintenance"));
-        addWithMargins(settingsCard, 0, 0, 0, 0);
+        content.addView(section("数据源", "本地演示账号与服务端账号严格分流"));
+        LinearLayout sourceCard = Ui.card(this);
+        sourceCard.addView(infoRow("当前模式", Session.demo ? "本地演示数据" : "服务端 MySQL 镜像"));
+        sourceCard.addView(infoRow("管理员", Session.name + " · " + Session.role));
+        if (!Session.demo) sourceCard.addView(infoRow("API 地址", Session.baseUrl));
+        sourceCard.addView(infoRow("用户 / 合同", db.users(null, null).size() + " 位 / " + db.contracts(null).size() + " 份"));
+        addWithMargins(sourceCard, 0, 0, 0, 0);
 
-        content.addView(section("管理员", "角色分级 · 默认拒绝"));
-        LinearLayout adminsCard = Ui.card(this);
-        for (Db.Admin admin : db.admins()) {
-            LinearLayout row = Ui.row(this);
-            row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
-            LinearLayout left = Ui.column(this);
-            left.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            left.addView(Ui.text(this, admin.name + "  " + admin.id, 12, true, Ui.INK));
-            left.addView(Ui.text(this, admin.phone + " · " + admin.role, 9, false, Ui.MUTED));
-            row.addView(left);
-            row.addView(Ui.pill(this, admin.status, Ui.statusFg(admin.status), Ui.statusBg(admin.status)));
-            adminsCard.addView(row);
+        content.addView(section("广告位管理", "六个广告位与小程序页面一一对应"));
+        LinearLayout adCard = Ui.card(this);
+        JSONObject adRoot = adSnapshot();
+        JSONArray adSlots = adRoot.optJSONArray("slots");
+        for (int i = 0; i < Db.AD_SLOT_KEYS.length; i++) {
+            String key = Db.AD_SLOT_KEYS[i];
+            String name = Db.AD_SLOT_NAMES[i];
+            boolean enabled = true;
+            if (adSlots != null) {
+                for (int j = 0; j < adSlots.length(); j++) {
+                    JSONObject item = adSlots.optJSONObject(j);
+                    if (item != null && key.equals(item.optString("key"))) {
+                        enabled = item.optBoolean("enabled", true);
+                        break;
+                    }
+                }
+            }
+            adCard.addView(adSlotRow(key, name, enabled));
         }
-        TextView add = Ui.button(this, "+ 新增管理员", false);
-        LinearLayout.LayoutParams addLp = Ui.matchWrap(this);
-        addLp.topMargin = Ui.dp(this, 12);
-        add.setLayoutParams(addLp);
-        add.setOnClickListener(v -> showAddAdminDialog());
-        adminsCard.addView(add);
+        adCard.addView(Ui.text(this, Session.demo ? "演示账号开关只影响本地演示；服务端账号保存后会调用 PUT /admin/settings 同步数据库。" : "开关会调用 PUT /admin/settings 写入服务端，下一次同步生效。", 9, false, Ui.MUTED));
+        addWithMargins(adCard, 0, 0, 0, 0);
+
+        content.addView(section("管理员账号", "角色与权限由服务端裁决"));
+        LinearLayout adminsCard = Ui.card(this);
+        List<Db.Admin> admins = db.admins();
+        if (admins.isEmpty()) {
+            adminsCard.addView(infoRow(Session.name, Session.role + " · 当前登录"));
+        } else {
+            for (Db.Admin admin : admins) adminsCard.addView(infoRow(admin.name + "  " + admin.id, admin.phone + " · " + admin.role));
+        }
         addWithMargins(adminsCard, 0, 0, 0, 0);
 
-        content.addView(section("审计日志", "本地最近 6 条"));
-        LinearLayout auditCard = Ui.card(this);
-        for (Db.Audit audit : db.audits(6)) auditCard.addView(auditRow(audit));
-        addWithMargins(auditCard, 0, 0, 0, 0);
+        content.addView(section("服务与合规", "只读统计，不审核用户预算、不改用户账目"));
+        LinearLayout compliance = Ui.card(this);
+        compliance.addView(infoRow("数据库", "MySQL 8.0 · 仅 Flask API 访问"));
+        compliance.addView(infoRow("用户数据", "小程序全部写入服务端；管理端不提供预算修改"));
+        compliance.addView(infoRow("广告统计", "曝光 / 点击 / 点击用户 / 激励完成"));
+        compliance.addView(infoRow("小程序广告位", "首页、记账、进度、统计、导出激励、导出底部"));
+        addWithMargins(compliance, 0, 0, 0, 0);
 
-        LinearLayout actions = Ui.row(this);
-        TextView export = Ui.button(this, "导出审计 CSV", false);
-        export.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        export.setOnClickListener(v -> shareAudits());
         TextView logout = Ui.ghostButton(this, "退出登录");
-        LinearLayout.LayoutParams logoutLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
-        logoutLp.leftMargin = Ui.dp(this, 8);
+        LinearLayout.LayoutParams logoutLp = Ui.matchWrap(this);
+        logoutLp.topMargin = Ui.dp(this, 20);
         logout.setLayoutParams(logoutLp);
         logout.setOnClickListener(v -> {
-            getSharedPreferences("session", MODE_PRIVATE).edit().clear().apply();
+            Session.clear(this);
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         });
-        actions.addView(export);
-        actions.addView(logout);
-        LinearLayout.LayoutParams actionsLp = Ui.matchWrap(this);
-        actionsLp.topMargin = Ui.dp(this, 18);
-        actions.setLayoutParams(actionsLp);
-        content.addView(actions);
+        content.addView(logout);
+    }
+
+    private View infoRow(String label, String value) {
+        LinearLayout row = Ui.row(this);
+        row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
+        row.addView(Ui.text(this, label, 10, false, Ui.MUTED));
+        TextView content = Ui.text(this, value, 11, true, Ui.INK);
+        content.setGravity(Gravity.END);
+        content.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        row.addView(content);
+        return row;
+    }
+
+    private View adSlotRow(String key, String name, boolean enabled) {
+        LinearLayout row = Ui.row(this);
+        row.setPadding(0, Ui.dp(this, 7), 0, Ui.dp(this, 7));
+        LinearLayout text = Ui.column(this);
+        text.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        text.addView(Ui.text(this, name, 11, true, Ui.INK));
+        text.addView(Ui.text(this, key, 9, false, Ui.MUTED));
+        row.addView(text);
+        Switch toggle = new Switch(this);
+        toggle.setChecked(enabled);
+        toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (Session.demo) {
+                db.setSetting("ad_slot_" + key, isChecked ? "true" : "false");
+                Toast.makeText(this, name + (isChecked ? " 已启用" : " 已关闭"), Toast.LENGTH_SHORT).show();
+            } else {
+                JSONObject payload = new JSONObject();
+                try {
+                    JSONObject ads = new JSONObject();
+                    JSONObject slots = new JSONObject();
+                    JSONObject slot = new JSONObject();
+                    slot.put("enabled", isChecked);
+                    slots.put(key, slot);
+                    ads.put("slots", slots);
+                    payload.put("ads", ads);
+                } catch (Exception ignored) {}
+                new Thread(() -> {
+                    try {
+                        RemoteSync.updateSettings(Session.baseUrl, Session.token, payload);
+                        runOnUiThread(() -> Toast.makeText(this, "服务端广告位已更新", Toast.LENGTH_SHORT).show());
+                    } catch (Exception e) {
+                        runOnUiThread(() -> {
+                            toggle.setChecked(!isChecked);
+                            Toast.makeText(this, "更新失败：" + e.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+                    }
+                }).start();
+            }
+        });
+        row.addView(toggle);
+        return row;
     }
 
     private View settingRow(String title, String desc, String key) {
@@ -671,16 +942,6 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton("取消", null)
                 .show();
-    }
-
-    private void shareAudits() {
-        String csv = db.exportAudits();
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("text/csv");
-        intent.putExtra(Intent.EXTRA_SUBJECT, "装修记 · 审计日志");
-        intent.putExtra(Intent.EXTRA_TEXT, csv);
-        startActivity(Intent.createChooser(intent, "导出审计 CSV"));
-        db.addAudit("A-01", "export.audit", "导出审计日志 CSV");
     }
 
     private View issueCard(Db.Issue issue) {
@@ -744,6 +1005,10 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams lp = Ui.matchWrap(this);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         view.setLayoutParams(lp);
+        // 防御性处理：同一个 View 被复用时先脱离旧父容器，避免 "child already has a parent" 闪退。
+        if (view.getParent() instanceof ViewGroup) {
+            ((ViewGroup) view.getParent()).removeView(view);
+        }
         content.addView(view);
     }
 

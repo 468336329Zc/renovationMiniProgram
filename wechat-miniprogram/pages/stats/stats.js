@@ -1,12 +1,15 @@
 const data = require('../../utils/data');
 const fmt = require('../../utils/format');
+const ads = require('../../utils/ads');
 
 Page({
   data: {
+    ad: { show: false },
+    adConfig: { enabled: false, slots: {} },
     spentText: '¥0', budgetText: '¥0', availableText: '¥0',
     usedPct: 0, usedPctText: '0%', categories: [], monthly: []
   },
-  onShow() { this.load(); },
+  onShow() { this.load(); this.loadAd(); },
   load() {
     data.stats().then(res => {
       const summary = res.summary || {};
@@ -36,5 +39,13 @@ Page({
       });
     });
   },
+  loadAd() {
+    ads.load().then(cfg => {
+      const ad = ads.view(cfg, 'stats_feed');
+      this.setData({ ad, adConfig: cfg });
+      ads.impression('stats_feed', cfg);
+    }).catch(() => this.setData({ ad: { show: false } }));
+  },
+  tapAd() { ads.click('stats_feed', this.data.adConfig); },
   goExport() { wx.navigateTo({ url: '/pages/export/export' }); }
 });

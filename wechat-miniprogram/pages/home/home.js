@@ -1,5 +1,6 @@
 const data = require('../../utils/data');
 const fmt = require('../../utils/format');
+const ads = require('../../utils/ads');
 
 function decorate(res) {
   const summary = res.summary || {};
@@ -17,19 +18,20 @@ function decorate(res) {
 Page({
   data: {
     userName: '张川',
-    modeLabel: '本地演示数据',
+    modeLabel: '服务端数据',
     project: {},
     summary: {},
     nodes: [],
     recentExpenses: [],
     openIssues: [],
-    ads: { enabled: false }
+    ad: { show: false },
+    adConfig: { enabled: false, slots: {} }
   },
-  onShow() { this.load(); },
+  onShow() { this.load(); this.loadAd(); },
   onPullDownRefresh() { this.load(() => wx.stopPullDownRefresh()); },
   load(done) {
     const app = getApp();
-    if (!app.globalData.token && !app.globalData.demoMode) {
+    if (!app.globalData.token) {
       wx.reLaunch({ url: '/pages/login/login' });
       return;
     }
@@ -43,8 +45,7 @@ Page({
         summary: decorated.summary,
         nodes: decorated.nodes || [],
         recentExpenses: decorated.recentExpenses || [],
-        openIssues: decorated.openIssues || [],
-        ads: decorated.ads || { enabled: false }
+        openIssues: decorated.openIssues || []
       });
       if (done) done();
     }).catch(() => {
@@ -52,6 +53,14 @@ Page({
       if (done) done();
     });
   },
+  loadAd() {
+    ads.load().then(cfg => {
+      const ad = ads.view(cfg, 'home_banner');
+      this.setData({ ad, adConfig: cfg });
+      ads.impression('home_banner', cfg);
+    }).catch(() => this.setData({ ad: { show: false } }));
+  },
+  tapAd() { ads.click('home_banner', this.data.adConfig); },
   goAdd() { wx.navigateTo({ url: '/pages/expense-form/expense-form' }); },
   goProgress() { wx.switchTab({ url: '/pages/progress/progress' }); },
   goIssues() { wx.navigateTo({ url: '/pages/issues/issues' }); },

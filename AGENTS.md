@@ -79,7 +79,7 @@ Android 管理员端 ─┐
 
 - 删除用户、批量删除数据；
 - 修改管理员角色/权限、停用/恢复管理员；
-- 调整用户预算、重置用户密码；
+- 重置用户密码；
 - 导出全量 CSV / 合同 / 凭证；
 - 关闭审计、修改广告/导出开关等全局设置。
 
@@ -120,7 +120,7 @@ Android 管理员端 ─┐
 - 新增表/字段必须补索引、注释、外键与级联策略；不得无索引做高频列表查询。
 - 审计日志只追加，不随业务数据清理而删除。
 
-已预留表：`admins`、`admin_sessions`、`users`、`user_sessions`、`projects`、`expenses`、`nodes`、`node_photos`、`issues`、`contracts`、`contract_payments`、`audit_logs`、`settings`、`notifications`，以及视图 `v_project_finance`。
+已预留表：`admins`、`admin_sessions`、`users`、`user_sessions`、`projects`、`expenses`、`nodes`、`node_photos`、`issues`、`contracts`、`contract_payments`、`audit_logs`、`settings`、`ad_events`，以及视图 `v_project_finance`。
 
 ---
 
@@ -179,6 +179,28 @@ Android 管理员端 ─┐
 - 新增或修改提交前检查 `git log`，发现英文提交信息先改写为中文再推送。
 - 代码标识符、命令、路径、API 字段名可保留英文，不属于 commit message 的中文要求。
 
+### 6.2 文档迭代规范
+
+以下三条是强制规范，任何一次开发调整都必须执行：
+
+1. **需求变化**：凡涉及功能、角色边界、数据源、验收标准、明确不做的变化，必须同步修改 `requirements.md`，使其始终是最新需求基线。
+2. **概要设计变化**：凡涉及架构、模块边界、数据流、部署方式、安全模型的变化，必须同步修改 `design-overview.md`，使其始终是最新概要设计。
+3. **详细设计变化**：凡涉及数据库表/字段、接口路径/参数/返回、页面、Android 类、关键流程、错误处理的变化，必须同步修改 `design-detailed.md`，使其始终与当前代码一致。
+
+补充要求：
+
+- 功能变化同时更新 `README.md` 与版本号（`android-admin/app/build.gradle`、`wechat-miniprogram/utils/config.js`）。
+- 文档中的路径、账号、版本、签名指纹、接口必须能从当前代码复核，不得写入未实现的能力。
+- 代码与文档不一致时，以已合入代码为准，并立即补齐文档，不能把旧文档当最新基线。
+- 每次提交前检查上述四份文件是否随本次改动更新。
+
+### 6.3 管理端角色边界
+
+- 管理端只做**只读统计 + 有限账号/系统管控**。
+- 不提供修改用户预算、修改支出/合同金额、改写问题状态、审核用户账目的入口或接口。
+- 不提供公告/运营推送、异常队列、决策队列、审计日志展示等与产品定位不符的模块。
+- 广告统计必须按六个广告位分别统计，不能合并成一个笼统广告指标。
+
 ---
 
 ## 7. 完成定义（Definition of Done）
@@ -229,4 +251,4 @@ Android 管理员端 ─┐
 - 演示数据：`server/sql/002_seed.sql`
 - 安全单测：`server/tests/test_security.py`
 
-当前状态：Flask 服务端已用本机 MariaDB 10.6 跑通真实连库；管理员/用户登录、refresh 轮换、登出、TOTP MFA、用户业务 CRUD、合同付款回写、管理员概览/用户管控/运营/设置/审计/导出均已验证；`python -m unittest tests.test_security` 5 项通过。微信真实 `code2Session` 需要 AppID/AppSecret 才能线上验证；Android 管理员端已产出签名 APK；微信小程序用户端已实现 11 个页面与本地/服务端双模式。新增功能必须按本文件执行，不能降低现有基线。
+当前状态（v1.0.19）：Flask 服务端已实现管理员/用户 JWT、refresh 轮换、TOTP MFA、用户业务 CRUD、合同付款回写、管理员统计与有限管控、六广告位配置与广告事件、CSV 导出；本机 MySQL 未启动，接口未做端到端联调。Android 管理员端已实现本地演示账号 + 服务端账号双数据源、五栏统计界面、广告详情与广告位开关，`assembleRelease` 产出 v1.0.19 并通过固定证书验签。微信小程序已实现页面与六广告位埋点，业务数据只走服务端，不做本地账本回退；真实微信登录仍需 AppID/AppSecret 与 HTTPS 合法域名。新增功能必须按本文件执行，不能降低现有基线。

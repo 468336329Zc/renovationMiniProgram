@@ -19,15 +19,50 @@ from config import Config
 from db import execute, jsonable, query_one
 from security import ApiError
 
+AD_SLOT_DEFINITIONS: dict[str, dict[str, Any]] = {
+    "home_banner": {
+        "key": "home_banner", "name": "首页 Banner", "surface": "home",
+        "type": "banner", "copy": "首页底部 Banner，不遮挡记账与进度。", "unitId": Config.AD_SLOT_HOME,
+        "ecpm": 68.0,
+    },
+    "expenses_feed": {
+        "key": "expenses_feed", "name": "记账页信息流", "surface": "expenses",
+        "type": "feed", "copy": "支出列表底部信息流，不插入账目行。", "unitId": Config.AD_SLOT_STATS,
+        "ecpm": 42.0,
+    },
+    "progress_feed": {
+        "key": "progress_feed", "name": "进度页信息流", "surface": "progress",
+        "type": "feed", "copy": "装修进度底部信息流，不遮挡节点操作。", "unitId": "",
+        "ecpm": 38.0,
+    },
+    "stats_feed": {
+        "key": "stats_feed", "name": "统计页信息流", "surface": "stats",
+        "type": "feed", "copy": "费用统计底部信息流，不遮挡图表。", "unitId": "",
+        "ecpm": 36.0,
+    },
+    "export_rewarded": {
+        "key": "export_rewarded", "name": "导出页激励视频", "surface": "export",
+        "type": "rewarded", "copy": "看一次激励视频解锁完整 CSV 导出。", "unitId": Config.AD_SLOT_EXPORT,
+        "ecpm": 120.0,
+    },
+    "export_feed": {
+        "key": "export_feed", "name": "导出页底部 Banner", "surface": "export",
+        "type": "banner", "copy": "导出页底部 Banner，不遮挡导出按钮。", "unitId": "",
+        "ecpm": 58.0,
+    },
+}
+
+AD_SLOT_KEYS = tuple(AD_SLOT_DEFINITIONS.keys())
+
 DEFAULT_SETTINGS: dict[str, Any] = {
     "ads": {
         "enabled": Config.AD_ENABLED,
         "slots": {
-            "home": Config.AD_SLOT_HOME,
-            "stats": Config.AD_SLOT_STATS,
-            "export": Config.AD_SLOT_EXPORT,
+            key: {"enabled": True, **definition}
+            for key, definition in AD_SLOT_DEFINITIONS.items()
         },
-        "copy": "广告位只在页面底部/导出解锁处出现，不遮挡记账、进度与合同操作。",
+        "copy": "广告只出现在页面底部与导出解锁处，不遮挡记账、进度与合同操作。",
+        "rewarded_ad_required": True,
     },
     "export": {
         "enabled": True,

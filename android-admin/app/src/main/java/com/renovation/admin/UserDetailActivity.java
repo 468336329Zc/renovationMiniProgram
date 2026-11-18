@@ -15,6 +15,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -30,7 +32,8 @@ public class UserDetailActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        db = Db.get(this);
+        Session.load(this);
+        db = Session.demo ? Db.get(this) : Db.getRemote(this);
         userId = getIntent().getStringExtra("user_id");
         user = db.user(userId);
         if (user == null) { finish(); return; }
@@ -71,18 +74,13 @@ public class UserDetailActivity extends Activity {
         actions.setPadding(0, Ui.dp(this, 10), 0, 0);
         TextView toggle = Ui.button(this, "停用账号", false);
         toggle.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        toggle.setOnClickListener(v -> {
-            String next = "正常".equals(user.status) ? "停用" : "正常";
-            db.updateUserStatus(user.id, next);
-            db.addAudit("A-01", "user.status", (next.equals("停用") ? "停用 " : "启用 ") + user.id + " · " + user.name);
-            Toast.makeText(this, "账号状态已更新", Toast.LENGTH_SHORT).show();
-            recreate();
-        });
-        TextView budget = Ui.button(this, "调整预算", false);
+        toggle.setOnClickListener(v -> changeUserStatus());
+        TextView budget = Ui.button(this, "预算由用户维护", false);
+        budget.setEnabled(false);
         LinearLayout.LayoutParams budgetLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         budgetLp.leftMargin = Ui.dp(this, 8);
         budget.setLayoutParams(budgetLp);
-        budget.setOnClickListener(v -> editBudget());
+        budget.setOnClickListener(v -> Toast.makeText(this, "管理端不修改用户预算", Toast.LENGTH_SHORT).show());
         actions.addView(toggle);
         actions.addView(budget);
         header.addView(actions);
@@ -90,10 +88,7 @@ public class UserDetailActivity extends Activity {
         actions2.setPadding(0, Ui.dp(this, 8), 0, 0);
         TextView revoke = Ui.ghostButton(this, "强制下线");
         revoke.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        revoke.setOnClickListener(v -> {
-            db.addAudit("A-01", "user.revoke", "强制下线 " + user.id + " 的全部会话");
-            Toast.makeText(this, "已吊销该用户的本地演示会话", Toast.LENGTH_SHORT).show();
-        });
+        revoke.setOnClickListener(v -> revokeSessions());
         TextView delete = Ui.ghostButton(this, "删除用户");
         LinearLayout.LayoutParams deleteLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         deleteLp.leftMargin = Ui.dp(this, 8);
@@ -172,16 +167,11 @@ public class UserDetailActivity extends Activity {
         }
         if (count == 0) content.addView(empty("该用户当前没有待解决问题"));
 
-        content.addView(section("审计记录", "与该用户相关的近 5 条"));
-        LinearLayout auditCard = Ui.card(this);
-        int shown = 0;
-        for (Db.Audit audit : db.audits(30)) {
-            if (!audit.detail.contains(user.id) && !audit.detail.contains(user.name)) continue;
-            if (shown++ >= 5) break;
-            auditCard.addView(auditRow(audit));
-        }
-        if (shown == 0) auditCard.addView(Ui.text(this, "暂无", 11, false, Ui.MUTED));
-        add(auditCard, 0, 8);
+        content.addView(section("数据边界", "管理端只读查看，不干预用户装修决策"));
+        LinearLayout note = Ui.card(this);
+        note.addView(Ui.text(this, "预算、支出、合同与问题由用户在小程序自行维护；管理端只做数据统计和账号状态管控。", 10, false, Ui.MUTED));
+        note.addView(Ui.text(this, Session.demo ? "当前为本地演示账号。" : "当前数据来自服务端 MySQL 镜像。", 10, true, Ui.BLUE));
+        add(note, 0, 8);
     }
 
     private View heroStat(String label, String value, String unit) {
@@ -205,7 +195,7 @@ public class UserDetailActivity extends Activity {
     }
 
     private void renderExpenses() {
-        content.addView(section("支出明细", "所有记录均来自本地演示数据"));
+        content.addView(section("支出明细", Session.demo ? "所有记录均来自本地演示数据" : "数据来自服务端 MySQL"));
         List<Db.Expense> expenses = db.expenses(null, userId);
         if (expenses.isEmpty()) content.addView(empty("暂无支出"));
         for (Db.Expense expense : expenses) {
@@ -280,40 +270,71 @@ public class UserDetailActivity extends Activity {
         }
     }
 
-    private void editBudget() {
-        EditText input = Ui.input(this, "预算金额");
-        input.setText(String.valueOf((long) user.budget));
-        LinearLayout box = Ui.column(this);
-        box.setPadding(Ui.dp(this, 20), Ui.dp(this, 8), Ui.dp(this, 20), 0);
-        box.addView(input);
-        new AlertDialog.Builder(this)
-                .setTitle("调整预算")
-                .setView(box)
-                .setPositiveButton("保存", (dialog, which) -> {
-                    try {
-                        double value = Double.parseDouble(input.getText().toString().trim());
-                        if (value < 0) throw new NumberFormatException();
-                        db.updateBudget(user.id, value);
-                        db.addAudit("A-01", "user.budget", "调整 " + user.id + " 预算为 " + ChartView.money(value));
-                        Toast.makeText(this, "预算已更新", Toast.LENGTH_SHORT).show();
-                        recreate();
-                    } catch (NumberFormatException e) {
-                        Toast.makeText(this, "请输入有效金额", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("取消", null)
-                .show();
+    private void changeUserStatus() {
+        String next = "正常".equals(user.status) ? "停用" : "正常";
+        if (Session.demo) {
+            db.updateUserStatus(user.id, next);
+            db.addAudit("A-01", "user.status", (next.equals("停用") ? "停用 " : "启用 ") + user.id + " · " + user.name);
+            Toast.makeText(this, "本地演示账号状态已更新", Toast.LENGTH_SHORT).show();
+            recreate();
+            return;
+        }
+        JSONObject body = new JSONObject();
+        try { body.put("status", next); } catch (Exception ignored) {}
+        new Thread(() -> {
+            try {
+                RemoteSync.patchUser(Session.baseUrl, Session.token, user.id, body);
+                db.updateUserStatus(user.id, next);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "服务端账号状态已更新", Toast.LENGTH_SHORT).show();
+                    recreate();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "更新失败：" + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    private void revokeSessions() {
+        if (Session.demo) {
+            db.addAudit("A-01", "user.revoke", "强制下线 " + user.id + " 的全部会话（本地演示）");
+            Toast.makeText(this, "已吊销本地演示会话", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new Thread(() -> {
+            try {
+                RemoteSync.revokeSessions(Session.baseUrl, Session.token, user.id);
+                runOnUiThread(() -> Toast.makeText(this, "已吊销该用户全部会话", Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "操作失败：" + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
     }
 
     private void confirmDelete() {
         new AlertDialog.Builder(this)
                 .setTitle("删除用户")
-                .setMessage("将删除 " + user.name + " 的本地项目、支出、节点与合同数据，且不可恢复。")
+                .setMessage("将删除 " + user.name + " 的" + (Session.demo ? "本地演示" : "服务端") + "项目、支出、节点与合同数据，且不可恢复。")
                 .setPositiveButton("确认删除", (dialog, which) -> {
-                    db.deleteUser(user.id);
-                    db.addAudit("A-01", "user.delete", "删除用户 " + user.id + " · " + user.name);
-                    Toast.makeText(this, "用户已删除", Toast.LENGTH_SHORT).show();
-                    finish();
+                    if (Session.demo) {
+                        db.deleteUser(user.id);
+                        db.addAudit("A-01", "user.delete", "删除用户 " + user.id + " · " + user.name);
+                        Toast.makeText(this, "用户已删除", Toast.LENGTH_SHORT).show();
+                        finish();
+                        return;
+                    }
+                    new Thread(() -> {
+                        try {
+                            RemoteSync.deleteUser(Session.baseUrl, Session.token, user.id);
+                            db.deleteUser(user.id);
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "服务端用户已删除", Toast.LENGTH_SHORT).show();
+                                finish();
+                            });
+                        } catch (Exception e) {
+                            runOnUiThread(() -> Toast.makeText(this, "删除失败：" + e.getMessage(), Toast.LENGTH_LONG).show());
+                        }
+                    }).start();
                 })
                 .setNegativeButton("取消", null)
                 .show();

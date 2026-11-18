@@ -26,3 +26,7 @@ dist/android-signing-secrets.txt
 
 # one-off CI diagnostics
 ci-signing-diagnostics.txt
+
+# 构建产物与签名中间文件不入库
+dist/*.apk
+dist/android-keystore-base64.txt

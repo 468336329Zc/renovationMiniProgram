@@ -98,9 +98,9 @@
     <view class="empty" wx:if="{{!openIssues.length}}">现场没有待解决问题</view>
   </view>
 
-  <view class="ad-slot" wx:if="{{ads.enabled}}" bindtap="goExport">
-    <view class="ad-tag">广告</view>
-    <view class="ad-copy">{{ads.copy || '底部广告位，不影响记账和进度操作。'}}</view>
+  <view class="ad-slot" wx:if="{{ad.show}}" bindtap="tapAd">
+    <view class="ad-tag">广告 · {{ad.name}}</view>
+    <view class="ad-copy">{{ad.copy}}</view>
     <view class="ad-arrow">›</view>
   </view>
 

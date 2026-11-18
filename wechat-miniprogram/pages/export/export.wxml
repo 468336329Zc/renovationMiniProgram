@@ -7,9 +7,13 @@
     <view class="lock-icon">▤</view>
     <view class="title-sm">完整数据待解锁</view>
     <view class="lock-copy">广告只出现在这里和页面底部；记账、进度、合同操作不受影响。</view>
-    <view class="ad-preview">
-      <view class="ad-tag">激励视频</view>
-      <view class="ad-copy">{{adUnit ? '观看完整视频后解锁' : '演示环境：模拟观看完成'}}</view>
+    <view class="ad-preview" wx:if="{{adReward.show}}">
+      <view class="ad-tag">激励视频 · {{adReward.name}}</view>
+      <view class="ad-copy">{{adReward.copy || '观看完整视频后解锁'}}</view>
+    </view>
+    <view class="ad-preview" wx:else>
+      <view class="ad-tag">激励视频未启用</view>
+      <view class="ad-copy">管理端未配置导出页激励视频，暂时无法解锁。</view>
     </view>
     <button class="btn btn-block" bindtap="watchAd" loading="{{loading}}">看视频解锁导出</button>
     <view class="tiny lock-note">服务端会校验解锁 token；直接调用导出接口会被拒绝。</view>
@@ -33,8 +37,9 @@
     <view class="tiny lock-note">导出只包含当前账号的数据；服务端按用户隔离。</view>
   </view>
 
-  <view class="ad-slot">
-    <view class="ad-tag">广告</view>
-    <view class="ad-copy">底部广告位常驻但不遮挡内容；导出解锁是唯一激励视频场景。</view>
+  <view class="ad-slot" wx:if="{{adFeed.show}}" bindtap="tapFeed">
+    <view class="ad-tag">广告 · {{adFeed.name}}</view>
+    <view class="ad-copy">{{adFeed.copy}}</view>
+    <view class="ad-arrow">›</view>
   </view>
 </view>
