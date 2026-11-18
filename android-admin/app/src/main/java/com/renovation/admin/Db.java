@@ -583,6 +583,89 @@ final class Db extends SQLiteOpenHelper {
         return list;
     }
 
+    /** 近 N 天逐日新增用户，缺失日期补 0，用于原型中的增长折线。 */
+    List<Stat> dailyNewUsers(int days) {
+        int span = Math.max(1, days);
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        java.text.SimpleDateFormat raw = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
+        java.text.SimpleDateFormat label = new java.text.SimpleDateFormat("MM-dd", Locale.CHINA);
+        java.util.Calendar day = java.util.Calendar.getInstance();
+        day.add(java.util.Calendar.DAY_OF_YEAR, -(span - 1));
+        for (int i = 0; i < span; i++) {
+            counts.put(raw.format(day.getTime()), 0);
+            day.add(java.util.Calendar.DAY_OF_YEAR, 1);
+        }
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT date(created_at) AS d, COUNT(*) FROM users WHERE created_at >= date('now','-" + span + " day') GROUP BY d", null)) {
+            while (c.moveToNext()) {
+                String key = c.getString(0);
+                if (counts.containsKey(key)) counts.put(key, c.getInt(1));
+            }
+        }
+        List<Stat> list = new ArrayList<>();
+        java.util.Calendar cursorDay = java.util.Calendar.getInstance();
+        cursorDay.add(java.util.Calendar.DAY_OF_YEAR, -(span - 1));
+        for (int i = 0; i < span; i++) {
+            String key = raw.format(cursorDay.getTime());
+            list.add(new Stat(label.format(cursorDay.getTime()), counts.get(key)));
+            cursorDay.add(java.util.Calendar.DAY_OF_YEAR, 1);
+        }
+        return list;
+    }
+
+    List<Stat> methods() {
+        List<Stat> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT method, COUNT(*) AS count FROM users WHERE method <> '' GROUP BY method ORDER BY count DESC", null)) {
+            while (c.moveToNext()) list.add(new Stat(c.getString(0), c.getDouble(1)));
+        }
+        return list;
+    }
+
+    List<Stat> issueLevels() {
+        List<Stat> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT level, COUNT(*) AS count FROM issues GROUP BY level ORDER BY count DESC", null)) {
+            while (c.moveToNext()) list.add(new Stat(c.getString(0), c.getDouble(1)));
+        }
+        return list;
+    }
+
+    String lastActivity(String userId) {
+        String latest = "";
+        String sql = "SELECT MAX(t) FROM (" +
+                "SELECT MAX(recorded_at) t FROM nodes WHERE user_id=? UNION ALL " +
+                "SELECT MAX(spent_at) t FROM expenses WHERE user_id=? UNION ALL " +
+                "SELECT MAX(recorded_at) t FROM issues WHERE user_id=? UNION ALL " +
+                "SELECT MAX(created_at) t FROM users WHERE id=?)";
+        try (Cursor c = getReadableDatabase().rawQuery(sql,
+                new String[]{userId, userId, userId, userId})) {
+            if (c.moveToFirst() && c.getString(0) != null) latest = c.getString(0);
+        }
+        return latest;
+    }
+
+    /** 超过 10 天没有任何记账、进度或问题更新的用户，仅作为观察标签。 */
+    boolean stalled(String userId) {
+        String latest = lastActivity(userId);
+        if (latest == null || latest.isEmpty()) return false;
+        try {
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
+            java.util.Date date = format.parse(latest.length() >= 10 ? latest.substring(0, 10) : latest);
+            return date != null && (System.currentTimeMillis() - date.getTime()) / 86400000L > 10;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    int contractsPending() {
+        return count("contracts", "total_amount > paid_amount");
+    }
+
+    int contractsOverdue() {
+        return count("contracts", "status IN ('风险','逾期')");
+    }
+
     Map<String, Integer> funnel() {
         Map<String, Integer> map = new LinkedHashMap<>();
         map.put("注册用户", count("users", null));

@@ -1,7 +1,7 @@
 # 装修记 · 详细设计
 
 > 本文件是最新详细设计基线，必须与当前代码保持一致。任何涉及表结构、接口、页面、类、关键流程的改动，必须同步修改本文件。
-> 对应版本：`v1.0.19`；需求见 `requirements.md`，架构见 `design-overview.md`。
+> 对应版本：`v1.0.20`；需求见 `requirements.md`，架构见 `design-overview.md`。
 
 ## 1. 数据库设计
 
@@ -174,7 +174,11 @@
 | `ApiClient` | `GET/POST/PATCH/DELETE`；10s 连接/20s 读取；解析 `{ok,data,error}`；HTTP 非 2xx 抛错 |
 | `RemoteSync` | `login`、`sync`、`patchUser`、`revokeSessions`、`deleteUser`、`updateSettings`；同步 users/contracts/expenses/issues/ads/analytics 到 remote 库；合同/支出/问题按 `project_id` 反查用户 ID |
 | `Db` | 双库；版本 3；建表、种子、用户/合同/支出/节点/问题/广告事件/设置查询；`adSnapshotJson` 生成广告快照 |
-| `MainActivity` | 五栏；`selectTab`；广告详情弹层；系统页广告位开关 |
+| `MainActivity` | 五栏“首页/用户/合同/统计/系统”；`selectTab` 重建内容；首页 Hero/快捷宫格/照片条/增长/城市/预算排行；广告详情底部弹层（全部 + 六个广告位筛选）；CSV 导出与分享 |
+| `Ui` | 原型色板与组件；卡片默认 MATCH_PARENT；顶栏/底栏/胶囊/按钮/输入框 |
+| `GlyphView` | Canvas 线性图标，避免引入整套图标资源 |
+| `TrendChartView` | 增长折线：网格、蓝色面积、末点圆点、日期标签 |
+| `ToggleView` | 40×23 胶囊开关，点击切换并回调 |
 | `UserDetailActivity` | 四 Tab；本地/远程数据源切换；停用/启用、强制下线、删除；预算只读 |
 | `LoginActivity` | 本地演示/服务端账号；MFA；API 地址；后台线程同步 |
 
@@ -208,7 +212,11 @@ LoginActivity.onCreate
 - **概览**：总支出 hero、预算执行、用户/合同/问题 KPI、月度趋势、费用构成、待解决问题、最近广告点击。
 - **用户**：搜索/筛选；用户卡片显示预算执行与状态；详情页四 Tab。
 - **合同**：只读台账；总额/已付/待付/节点进度/状态筛选。
-- **统计**：周期切换；预算 Top5；广告效果卡片；点击排行/点击明细弹层。
+- **首页**：Hero（累计用户 48sp、预算/合同/项目三列、日期轴/数据源/版本）；四宫格快捷入口；三张现场照片；用户增长折线；城市 Top5；预算 Top5；最近注册；待解问题轨标。
+- **用户**：页头、导出按钮、搜索框、全部/正常/已禁用/停滞 chips（实时计数）；用户卡进入 `UserDetailActivity`。
+- **合同**：页头、合同总额/待付/逾期指标条、全部/待付/逾期/已付 chips、合同行、合同品类构成、只读说明。
+- **统计**：7/30/90 分段；四个 KPI；增长折线；预算/支出指标；预算区间分布；费用构成；预算 Top5；城市与装修方式；合同/问题/产品四 KPI；问题级别；内容产出量；六广告位效果卡；数据源/同步/接口/版本。
+- **系统**：管理员卡；账号与用户（导出开关、强制下线/删除入口）；广告管理（总开关 + 六广告位）；服务与数据库健康；数据与合规（全量/脱敏导出、保留、备份）；基础字典；退出。
 - **系统**：数据源、管理员、用户/合同数量、六广告位开关、服务与合规、退出登录。
 
 ### 4.5 广告效果弹层
@@ -221,7 +229,8 @@ LoginActivity.onCreate
 
 ## 5. 构建与签名
 
-- `android-admin/app/build.gradle`：`versionCode 19`、`versionName "1.0.19"`；release 使用 `keystore/demo-release.jks`，支持环境变量覆盖。
+- `android-admin/app/build.gradle`：`versionCode 20`、`versionName "1.0.20"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- 本地构建需要 JDK 17（Gradle 8.7 + AGP 8.5.2）；Android SDK 位于 `/home/user/android-sdk`，`local.properties` 已写 `sdk.dir`。
 - 固定证书 SHA-256：`6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - GitHub Actions：`.github/workflows/android-release.yml`；Secrets：
   - `ANDROID_KEYSTORE_BASE64`
@@ -255,12 +264,12 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 | 用户被停用 | 登录 403；已有 refresh token 吊销 |
 | 广告位关闭 | 小程序不展示；上报返回 403；管理端统计仍保留历史 |
 
-## 7. 验证清单（v1.0.19）
+## 7. 验证清单（v1.0.20）
 
 - [x] 服务端 Python `py_compile` 通过。
 - [x] 小程序 `node --check` 通过（data/ads/login/home/expenses/progress/stats/export/app）。
 - [x] Android `compileReleaseJavaWithJavac` 通过。
-- [x] Android `assembleRelease` 产出 `v1.0.19`，`apksigner` 证书 SHA-256 与基线一致。
+- [x] Android `assembleRelease` 产出 `v1.0.20`，`apksigner` 证书 SHA-256 与基线一致。
 - [ ] MySQL 端到端联调（本机 MySQL 未启动）。
 - [ ] 真机安装/启动/远程登录验证（需设备与服务端地址）。
 - [ ] 微信真实 AppID/AppSecret 与 HTTPS 合法域名验证。

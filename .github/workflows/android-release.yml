@@ -122,7 +122,7 @@ jobs:
             Android 管理员端原生 APK。
             本地演示账号：13800000001 / admin123（本地 SQLite 演示数据）。
             其他账号：直连 Flask API，同步服务端 MySQL 数据。
-            新增：六个广告位曝光/点击/点击用户/排行统计；合同台账与预算排行；系统与广告位管理。
+            新增：管理端界面按已确认移动端原型重做（五栏、深海军蓝 Hero、增长折线、用户/合同/统计/系统）；广告效果详情支持“全部 + 六个广告位”分别统计、点击排行与点击明细；启动图标改为多密度 PNG，修复部分 MIUI 桌面不显示图标。
             构建：Gradle + JDK 17；签名证书由 GitHub Secrets 注入并保持固定。
           files: android-admin/app/build/outputs/apk/release/app-release.apk
           fail_on_unmatched_files: true

@@ -12,22 +12,34 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** 统一的冷白 + 电光蓝视觉语汇。 */
+/** 与已确认原型一致的冷白图纸底、深海军蓝、电光蓝信号色。 */
 final class Ui {
-    static final int BG = Color.parseColor("#F4F7FC");
+    static final int PAGE = Color.parseColor("#EDF1F7");
+    static final int BG = PAGE;
     static final int CARD = Color.WHITE;
-    static final int INK = Color.parseColor("#0B1220");
-    static final int MUTED = Color.parseColor("#65708A");
-    static final int LINE = Color.parseColor("#E4EAF4");
-    static final int BLUE = Color.parseColor("#155EEF");
-    static final int BLUE_DARK = Color.parseColor("#0B1F4B");
-    static final int BLUE_SOFT = Color.parseColor("#E8F0FF");
-    static final int ORANGE = Color.parseColor("#E86A17");
-    static final int ORANGE_SOFT = Color.parseColor("#FFF0E4");
-    static final int GREEN = Color.parseColor("#138A5B");
-    static final int GREEN_SOFT = Color.parseColor("#E6F6EE");
-    static final int RED = Color.parseColor("#C63C3C");
-    static final int RED_SOFT = Color.parseColor("#FDECEC");
+    static final int PANEL = Color.parseColor("#F6F8FC");
+    static final int INK = Color.parseColor("#0E1726");
+    static final int INK2 = Color.parseColor("#3B4A60");
+    static final int MUTED = Color.parseColor("#6D7B91");
+    static final int LINE = Color.parseColor("#E1E7F0");
+    static final int LINE_SOFT = Color.parseColor("#EEF1F6");
+    static final int NAVY = Color.parseColor("#0C1B33");
+    static final int NAVY2 = Color.parseColor("#14294D");
+    static final int BLUE = Color.parseColor("#1B4DFF");
+    static final int BLUE_DARK = Color.parseColor("#0B2A6F");
+    static final int BLUE_SOFT = Color.parseColor("#E8EDFF");
+    static final int ORANGE = Color.parseColor("#C96A1A");
+    static final int ORANGE_SOFT = Color.parseColor("#FBEEE3");
+    static final int GREEN = Color.parseColor("#0F7A5A");
+    static final int GREEN_SOFT = Color.parseColor("#E6F4EF");
+    static final int RED = Color.parseColor("#BE3B45");
+    static final int RED_SOFT = Color.parseColor("#FBE9EB");
+    static final int HERO_TEXT = Color.parseColor("#F2F6FF");
+    static final int HERO_MUTED = Color.parseColor("#9CB4E2");
+    static final int HERO_DIM = Color.parseColor("#7089B6");
+    static final int HERO_LINE = Color.parseColor("#333F5D");
+    static final String SANS = "sans-serif";
+    static final String MONO = "monospace";
 
     private Ui() {}
 
@@ -40,8 +52,14 @@ final class Ui {
         view.setText(value);
         view.setTextSize(size);
         view.setTextColor(color);
-        view.setTypeface(Typeface.create("sans-serif", bold ? Typeface.BOLD : Typeface.NORMAL));
-        view.setLineSpacing(dp(c, 2), 1f);
+        view.setTypeface(Typeface.create(SANS, bold ? Typeface.BOLD : Typeface.NORMAL));
+        view.setLineSpacing(dp(c, 1.2f), 1f);
+        return view;
+    }
+
+    static TextView mono(Context c, String value, float size, boolean bold, int color) {
+        TextView view = text(c, value, size, bold, color);
+        view.setTypeface(Typeface.create(MONO, bold ? Typeface.BOLD : Typeface.NORMAL));
         return view;
     }
 
@@ -53,12 +71,28 @@ final class Ui {
         return d;
     }
 
+    static GradientDrawable topRounded(int color, float radius) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(color);
+        d.setCornerRadii(new float[]{radius, radius, radius, radius, 0, 0, 0, 0});
+        return d;
+    }
+
     static LinearLayout card(Context c) {
         LinearLayout layout = new LinearLayout(c);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(dp(c, 18), dp(c, 16), dp(c, 18), dp(c, 16));
-        layout.setBackground(rounded(CARD, dp(c, 20), Color.TRANSPARENT, 0));
-        layout.setElevation(dp(c, 2));
+        layout.setPadding(dp(c, 13), dp(c, 14), dp(c, 13), dp(c, 14));
+        layout.setBackground(rounded(CARD, dp(c, 14), LINE, dp(c, 1)));
+        layout.setElevation(dp(c, 1));
+        layout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return layout;
+    }
+
+    static LinearLayout panel(Context c) {
+        LinearLayout layout = new LinearLayout(c);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dp(c, 13), dp(c, 13), dp(c, 13), dp(c, 13));
+        layout.setBackground(rounded(PANEL, dp(c, 9), LINE, dp(c, 1)));
         return layout;
     }
 
@@ -91,27 +125,31 @@ final class Ui {
     }
 
     static TextView pill(Context c, String text, int textColor, int bg) {
-        TextView view = text(c, text, 11, true, textColor);
+        TextView view = text(c, text, 10, true, textColor);
         view.setGravity(Gravity.CENTER);
-        view.setPadding(dp(c, 9), dp(c, 4), dp(c, 9), dp(c, 4));
-        view.setBackground(rounded(bg, dp(c, 999), Color.TRANSPARENT, 0));
+        view.setPadding(dp(c, 8), dp(c, 2), dp(c, 8), dp(c, 3));
+        view.setBackground(rounded(bg, dp(c, 5), Color.TRANSPARENT, 0));
         return view;
     }
 
+    static TextView bluePill(Context c, String text) {
+        return pill(c, text, BLUE_DARK, BLUE_SOFT);
+    }
+
     static TextView button(Context c, String text, boolean primary) {
-        TextView view = text(c, text, 13, true, primary ? Color.WHITE : BLUE);
+        TextView view = text(c, text, 12, true, primary ? Color.WHITE : INK2);
         view.setGravity(Gravity.CENTER);
-        view.setPadding(dp(c, 16), dp(c, 11), dp(c, 16), dp(c, 11));
-        view.setBackground(rounded(primary ? BLUE : BLUE_SOFT, dp(c, 12), Color.TRANSPARENT, 0));
+        view.setPadding(dp(c, 14), dp(c, 9), dp(c, 14), dp(c, 9));
+        view.setBackground(rounded(primary ? BLUE : PANEL, dp(c, 9), primary ? BLUE : LINE, dp(c, 1)));
         view.setClickable(true);
         return view;
     }
 
     static TextView ghostButton(Context c, String text) {
-        TextView view = text(c, text, 13, true, MUTED);
+        TextView view = text(c, text, 11, true, INK2);
         view.setGravity(Gravity.CENTER);
-        view.setPadding(dp(c, 14), dp(c, 10), dp(c, 14), dp(c, 10));
-        view.setBackground(rounded(Color.parseColor("#EEF2F9"), dp(c, 12), Color.TRANSPARENT, 0));
+        view.setPadding(dp(c, 12), dp(c, 9), dp(c, 12), dp(c, 9));
+        view.setBackground(rounded(CARD, dp(c, 9), LINE, dp(c, 1)));
         view.setClickable(true);
         return view;
     }
@@ -119,19 +157,19 @@ final class Ui {
     static EditText input(Context c, String hint) {
         EditText input = new EditText(c);
         input.setHint(hint);
-        input.setTextSize(14);
+        input.setTextSize(12.5f);
         input.setTextColor(INK);
-        input.setHintTextColor(Color.parseColor("#98A2B3"));
+        input.setHintTextColor(Color.parseColor("#9AA7BA"));
         input.setSingleLine(true);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setPadding(dp(c, 13), dp(c, 10), dp(c, 13), dp(c, 10));
-        input.setBackground(rounded(Color.parseColor("#EEF3FB"), dp(c, 12), LINE, dp(c, 1)));
+        input.setPadding(dp(c, 12), 0, dp(c, 12), 0);
+        input.setBackground(rounded(CARD, dp(c, 9), LINE, dp(c, 1)));
         return input;
     }
 
     static View divider(Context c) {
         View view = new View(c);
-        view.setBackgroundColor(LINE);
+        view.setBackgroundColor(LINE_SOFT);
         view.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(c, 1)));
         return view;
     }
@@ -144,13 +182,12 @@ final class Ui {
 
     static TextView section(Context c, String text) {
         TextView view = text(c, text, 15, true, INK);
-        view.setPadding(0, dp(c, 22), 0, dp(c, 10));
+        view.setPadding(0, dp(c, 18), 0, dp(c, 9));
         return view;
     }
 
     static TextView label(Context c, String text) {
-        TextView view = text(c, text, 12, false, MUTED);
-        return view;
+        return text(c, text, 11, false, MUTED);
     }
 
     static TextView value(Context c, String text, float size) {
@@ -163,15 +200,15 @@ final class Ui {
 
     static int statusBg(String status) {
         if ("正常".equals(status) || "在岗".equals(status) || "已完成".equals(status) || "已付".equals(status)) return GREEN_SOFT;
-        if ("停用".equals(status) || "异常".equals(status)) return RED_SOFT;
+        if ("停用".equals(status) || "异常".equals(status) || "风险".equals(status) || "逾期".equals(status)) return RED_SOFT;
         if ("待核".equals(status) || "待付".equals(status) || "进行中".equals(status)) return ORANGE_SOFT;
         return BLUE_SOFT;
     }
 
     static int statusFg(String status) {
         if ("正常".equals(status) || "在岗".equals(status) || "已完成".equals(status) || "已付".equals(status)) return GREEN;
-        if ("停用".equals(status) || "异常".equals(status)) return RED;
+        if ("停用".equals(status) || "异常".equals(status) || "风险".equals(status) || "逾期".equals(status)) return RED;
         if ("待核".equals(status) || "待付".equals(status) || "进行中".equals(status)) return ORANGE;
-        return BLUE;
+        return BLUE_DARK;
     }
 }
