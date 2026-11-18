@@ -340,7 +340,9 @@ public class MainActivity extends Activity {
             issues.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
             footer.addView(issues);
             card.addView(footer);
-            addWithMargins(card, 0, 10, 0, 0);
+            LinearLayout.LayoutParams cardLp = Ui.matchWrap(this);
+            cardLp.setMargins(0, Ui.dp(this, 10), 0, 0);
+            card.setLayoutParams(cardLp);
             list.addView(card);
         }
     }
@@ -399,7 +401,9 @@ public class MainActivity extends Activity {
             note.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
             footer.addView(note);
             card.addView(footer);
-            addWithMargins(card, 0, 8, 0, 0);
+            LinearLayout.LayoutParams cardLp = Ui.matchWrap(this);
+            cardLp.setMargins(0, Ui.dp(this, 8), 0, 0);
+            card.setLayoutParams(cardLp);
             list.addView(card);
         }
     }
@@ -441,7 +445,9 @@ public class MainActivity extends Activity {
         lp.topMargin = Ui.dp(this, 7);
         bar.setLayoutParams(lp);
         card.addView(bar);
-        addWithMargins(card, 0, 8, 0, 0);
+        LinearLayout.LayoutParams cardLp = Ui.matchWrap(this);
+        cardLp.setMargins(0, Ui.dp(this, 8), 0, 0);
+        card.setLayoutParams(cardLp);
         return card;
     }
 
@@ -688,7 +694,9 @@ public class MainActivity extends Activity {
         top.addView(Ui.text(this, issue.status, 9, true, issue.status.equals("待解决") ? Ui.ORANGE : Ui.GREEN));
         card.addView(top);
         card.addView(Ui.text(this, issue.userName + " · " + issue.recordedAt, 9, false, Ui.MUTED));
-        addWithMargins(card, 0, 8, 0, 0);
+        LinearLayout.LayoutParams cardLp = Ui.matchWrap(this);
+        cardLp.setMargins(0, Ui.dp(this, 8), 0, 0);
+        card.setLayoutParams(cardLp);
         return card;
     }
 
