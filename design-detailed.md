@@ -280,7 +280,7 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 - [x] 服务端 Python `py_compile` 通过。
 - [x] 小程序 `node --check` 通过（data/ads/login/home/expenses/progress/stats/export/app）。
 - [x] Android `compileReleaseJavaWithJavac` 通过。
-- [x] Android 本地 `assembleRelease` 编译通过；正式签名证书由 GitHub Actions Secrets 注入，Release 产物需在 CI 完成后复核 SHA-256。
+- [x] Android 本地 `assembleRelease` 编译通过；GitHub Actions v1.1.0 Release APK 已下载验签，证书 SHA-256 `6888363...15d65` 与基线一致。
 - [x] 广告详情可按“全部广告位”和六个具体广告位筛选；广告位表现表、点击排行、点击明细随筛选同步。
 - [x] 首页白色浮卡、深墨预览块、三列 KPI、事实区与快捷入口按 v1.1.0 白色玻璃排版；用户行右列 82dp、合同行金额列保持安全宽度，金额不贴边。
 - [ ] MySQL 端到端联调（本机 MySQL 未启动）。
