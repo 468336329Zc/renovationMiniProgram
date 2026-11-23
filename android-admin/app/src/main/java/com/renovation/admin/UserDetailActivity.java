@@ -126,7 +126,7 @@ public class UserDetailActivity extends Activity {
         for (int i = 0; i < tabs.length; i++) {
             boolean on = i == index;
             tabs[i].setTextColor(on ? Color.WHITE : Ui.MUTED);
-            tabs[i].setBackground(Ui.rounded(on ? Ui.BLUE : Color.WHITE, Ui.dp(this, 10), Color.TRANSPARENT, 0));
+            tabs[i].setBackground(Ui.rounded(on ? Ui.BLUE : Color.WHITE, Ui.dp(this, 14), Color.TRANSPARENT, 0));
         }
         content.removeAllViews();
         user = db.user(userId);
@@ -139,11 +139,11 @@ public class UserDetailActivity extends Activity {
 
     private void renderOverview() {
         LinearLayout hero = Ui.card(this);
-        hero.setBackground(Ui.rounded(Ui.BLUE_DARK, Ui.dp(this, 20), Color.TRANSPARENT, 0));
-        hero.addView(Ui.text(this, "当前项目", 10, true, Color.parseColor("#9FB8FF")));
+        hero.setBackground(Ui.rounded(Ui.NAVY, Ui.dp(this, 22), Color.TRANSPARENT, 0));
+        hero.addView(Ui.text(this, "当前项目", 10, true, Ui.BRIGHT));
         hero.addView(Ui.spacer(this, 5));
         hero.addView(Ui.text(this, user.projectName, 18, true, Color.WHITE));
-        hero.addView(Ui.text(this, user.method + " · " + user.id + " · 预算 " + ChartView.shortMoney(user.budget), 10, false, Color.parseColor("#C8D6FF")));
+        hero.addView(Ui.text(this, user.method + " · " + user.id + " · 预算 " + ChartView.shortMoney(user.budget), 10, false, Ui.HERO_MUTED));
         hero.addView(Ui.spacer(this, 16));
         LinearLayout row = Ui.row(this);
         row.addView(heroStat("已支出", ChartView.shortMoney(user.spent), "元"));
@@ -170,15 +170,15 @@ public class UserDetailActivity extends Activity {
         content.addView(section("数据边界", "管理端只读查看，不干预用户装修决策"));
         LinearLayout note = Ui.card(this);
         note.addView(Ui.text(this, "预算、支出、合同与问题由用户在小程序自行维护；管理端只做数据统计和账号状态管控。", 10, false, Ui.MUTED));
-        note.addView(Ui.text(this, Session.demo ? "当前为本地演示账号。" : "当前数据来自服务端 MySQL 镜像。", 10, true, Ui.BLUE));
+        note.addView(Ui.text(this, Session.demo ? "当前为本地演示账号。" : "当前数据来自服务端 MySQL 镜像。", 10, true, Ui.BLUE_DARK));
         add(note, 0, 8);
     }
 
     private View heroStat(String label, String value, String unit) {
         LinearLayout box = Ui.column(this);
         box.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        box.addView(Ui.text(this, label, 9, false, Color.parseColor("#9FB8FF")));
-        box.addView(Ui.text(this, value + " " + unit, 16, true, Color.WHITE));
+        box.addView(Ui.text(this, label, 9, false, Ui.HERO_MUTED));
+        box.addView(Ui.text(this, value + " " + unit, 16, true, Ui.HERO_TEXT));
         return box;
     }
 

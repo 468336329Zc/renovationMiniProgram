@@ -34,22 +34,22 @@ public class LoginActivity extends Activity {
             return;
         }
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(Ui.BG);
+        scroll.setBackgroundColor(Ui.PAGE);
         scroll.setFillViewport(true);
         LinearLayout root = Ui.column(this);
-        root.setBackgroundColor(Ui.BG);
+        root.setBackgroundColor(Ui.PAGE);
         root.setPadding(Ui.dp(this, 24), Ui.dp(this, 54), Ui.dp(this, 24), Ui.dp(this, 24));
 
         LinearLayout brand = Ui.row(this);
-        TextView mark = Ui.text(this, "装", 22, true, Color.WHITE);
+        TextView mark = Ui.text(this, "装", 22, true, Ui.BRIGHT);
         mark.setGravity(Gravity.CENTER);
-        mark.setBackground(Ui.rounded(Ui.BLUE, Ui.dp(this, 15), Color.TRANSPARENT, 0));
+        mark.setBackground(Ui.rounded(Ui.NAVY, Ui.dp(this, 16), Color.TRANSPARENT, 0));
         mark.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 54), Ui.dp(this, 54)));
         brand.addView(mark);
         LinearLayout brandText = Ui.column(this);
         brandText.setPadding(Ui.dp(this, 12), 0, 0, 0);
         brandText.addView(Ui.text(this, "装修记", 24, true, Ui.INK));
-        brandText.addView(Ui.text(this, "ADMIN WORKSPACE", 10, true, Ui.BLUE));
+        brandText.addView(Ui.text(this, "ADMIN WORKSPACE", 10, true, Ui.BLUE_DARK));
         brand.addView(brandText);
         root.addView(brand);
 
@@ -110,12 +110,12 @@ public class LoginActivity extends Activity {
         root.addView(Ui.spacer(this, 24));
         LinearLayout note = Ui.card(this);
         note.setBackground(Ui.rounded(Ui.BLUE_SOFT, Ui.dp(this, 16), Color.TRANSPARENT, 0));
-        note.addView(Ui.text(this, "数据边界", 12, true, Ui.BLUE));
+        note.addView(Ui.text(this, "数据边界", 12, true, Ui.BLUE_DARK));
         note.addView(Ui.spacer(this, 5));
         note.addView(Ui.text(this, "本地演示账号只读本地 SQLite 演示数据；其他账号登录后从 Flask API 同步服务端 MySQL 快照，管理端不保存数据库账号或 MySQL 密码。", 11, false, Ui.MUTED));
         root.addView(note);
 
-        TextView footer = Ui.text(this, "RENOVATION · CONTROL DESK  /  v" + appVersionName(), 9, true, Color.parseColor("#9AA6BD"));
+        TextView footer = Ui.text(this, "RENOVATION · CONTROL DESK  /  v" + appVersionName(), 9, true, Ui.MUTED);
         footer.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams footerLp = Ui.matchWrap(this);
         footerLp.topMargin = Ui.dp(this, 22);
@@ -130,7 +130,7 @@ public class LoginActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception ignored) {
-            return "1.0.22";
+            return "1.1.0";
         }
     }
 

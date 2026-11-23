@@ -1,7 +1,7 @@
 # 装修记 · 详细设计
 
 > 本文件是最新详细设计基线，必须与当前代码保持一致。任何涉及表结构、接口、页面、类、关键流程的改动，必须同步修改本文件。
-> 对应版本：`v1.0.23`；需求见 `requirements.md`，架构见 `design-overview.md`。
+> 对应版本：`v1.1.0`；需求见 `requirements.md`，架构见 `design-overview.md`。
 
 ## 1. 数据库设计
 
@@ -174,11 +174,11 @@
 | `ApiClient` | `GET/POST/PATCH/DELETE`；10s 连接/20s 读取；解析 `{ok,data,error}`；HTTP 非 2xx 抛错 |
 | `RemoteSync` | `login`、`sync`、`patchUser`、`revokeSessions`、`deleteUser`、`updateSettings`；同步 users/contracts/expenses/issues/ads/analytics 到 remote 库；合同/支出/问题按 `project_id` 反查用户 ID |
 | `Db` | 双库；版本 4；建表、种子、用户/合同/支出/节点/问题/广告事件/设置查询；`adSnapshotJson` 生成广告快照 |
-| `MainActivity` | 五栏“首页/用户/合同/统计/系统”；`selectTab` 重建内容；首页整宽 Hero/快捷宫格/照片条/增长/城市/预算排行；广告详情底部弹层（全部广告位独占整行 + 六个广告位两列三行，汇总/广告位表现表/点击排行/点击明细联动）；CSV 导出与分享 |
-| `Ui` | 原型色板与组件；卡片默认 MATCH_PARENT；顶栏/底栏/胶囊/按钮/输入框；数字统一使用随包 `assets/SpaceGrotesk.ttf`，中文回退系统无衬线 |
+| `MainActivity` | 五栏“首页/用户/合同/统计/系统”；`selectTab` 重建内容；首页白色外卡 + 深墨预览块/快捷宫格/照片条/增长/城市/预算排行；广告详情底部弹层（全部广告位独占整行 + 六个广告位两列三行，汇总/广告位表现表/点击排行/点击明细联动）；CSV 导出与分享 |
+| `Ui` | 白色玻璃原型色板与组件；卡片默认 MATCH_PARENT；顶栏/底栏/胶囊/按钮/输入框；数字统一使用随包 `assets/SpaceGrotesk.ttf`，中文回退系统无衬线 |
 | `GlyphView` | Canvas 线性图标，避免引入整套图标资源 |
-| `HeroBackdropView` | 首页 Hero 底纹：26dp 蓝图网格、右上电光蓝径向光晕、底部渐隐与四角校准线 |
-| `TrendChartView` | 增长折线：网格、蓝色面积、末点圆点、日期标签 |
+| `HeroBackdropView` | 首页深墨预览块底纹：深墨纯色、右上浅绿径向光晕、底部暗部渐隐；不绘制蓝图网格与校准角标 |
+| `TrendChartView` | 增长折线：网格、绿色面积、末点圆点、日期标签 |
 | `ToggleView` | 40×23 胶囊开关，点击切换并回调 |
 | `UserDetailActivity` | 四 Tab；本地/远程数据源切换；停用/启用、强制下线、删除；预算只读 |
 | `LoginActivity` | 本地演示/服务端账号；MFA；API 地址；后台线程同步 |
@@ -230,7 +230,7 @@ LoginActivity.onCreate
 
 ## 5. 构建与签名
 
-- `android-admin/app/build.gradle`：`versionCode 23`、`versionName "1.0.23"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
+- `android-admin/app/build.gradle`：`versionCode 24`、`versionName "1.1.0"`；release 签名通过 GitHub Secrets 注入 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`，CI 解码到临时 keystore 后构建，固定证书 SHA-256 保持 `6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - 本地构建需要 JDK 17（Gradle 8.7 + AGP 8.5.2）；Android SDK 位于 `/home/user/android-sdk`，`local.properties` 已写 `sdk.dir`。
 - 固定证书 SHA-256：`6888363dae46c0453a835bfaecadedefe5d84b61c7729f44e7e5956b82415d65`。
 - GitHub Actions：`.github/workflows/android-release.yml`；Secrets：
@@ -265,22 +265,23 @@ aapt dump badging app/build/outputs/apk/release/app-release.apk | head -3
 | 用户被停用 | 登录 403；已有 refresh token 吊销 |
 | 广告位关闭 | 小程序不展示；上报返回 403；管理端统计仍保留历史 |
 
-## 7. 管理端排版约束（v1.0.23）
+## 7. 管理端排版约束（v1.1.0 白色玻璃编辑风）
 
-- Hero 为内容区内 18dp 圆角深色块，左右内边距 22dp、上下 22/20dp；背景保留蓝图网格、右上光晕与四角校准线，轮廓随圆角裁切。
-- 首页主信息分层：顶部快照标签与刷新按钮一行；标签 11sp 与 54sp 主数字之间留 8dp；主数字与“位用户”按基线对齐，右侧统计固定 150dp、两行间距 10dp。
+- 页面底色为 `#F1F4F0`；主浮卡为半透明白色，圆角 26dp、1dp 浅绿灰描边、轻投影；深墨预览块 `#17211D` 圆角 22dp，是首页唯一深色主视觉块。
+- 首页先排眉题、34sp 大标题与 14sp 灰色副标题；白色外卡内边距 14dp，深墨预览块内边距 18dp。
+- 预览块内主信息分层：顶部快照标签与刷新按钮一行；标签 11sp 与 48sp 主数字之间留 8dp；主数字与“位用户”按基线对齐，右侧统计固定 150dp、两行间距 10dp。
 - 三列 KPI 位于发丝线下方 16dp；列间分隔线高 36dp，首列无左分隔、末列无右分隔；标签 10sp、主值 17sp、附注 10sp，附注与主值留 5dp。
-- 底部轴信息拆成三等分：日期左对齐、数据源居中、版本右对齐，全部单行不换行。
-- 快捷入口为四个等宽白卡，高度 66dp、圆角 12dp、卡间距 8dp；图标 18dp，文案 11.5sp，图标与文案间距 10dp。
+- 预览块下方事实区拆成三等分：日期、服务区域、版本，标签 10sp、值 12sp 等宽字体，全部单行不换行。
+- 快捷入口为四个等宽白色玻璃卡，高度 78dp、圆角 20dp、卡间距 8dp；图标放入 34dp 浅绿底圆角块，文案 11.5sp。
 - 分区标题顶部 22dp、底部 12dp；预算排行编号块 30dp，金额列 90dp、右对齐、13.5sp 单行；用户/合同列表左右各 14dp，避免金额与长项目名越界。
 
-## 8. 验证清单（v1.0.23）
+## 8. 验证清单（v1.1.0）
 
 - [x] 服务端 Python `py_compile` 通过。
 - [x] 小程序 `node --check` 通过（data/ads/login/home/expenses/progress/stats/export/app）。
 - [x] Android `compileReleaseJavaWithJavac` 通过。
-- [x] Android `assembleRelease` 产出 `v1.0.23`，`apksigner` 证书 SHA-256 与基线一致。
+- [x] Android 本地 `assembleRelease` 编译通过；正式签名证书由 GitHub Actions Secrets 注入，Release 产物需在 CI 完成后复核 SHA-256。
 - [x] 广告详情可按“全部广告位”和六个具体广告位筛选；广告位表现表、点击排行、点击明细随筛选同步。
-- [x] 首页 Hero 主数字、右侧统计、三列 KPI 与快捷入口按 v1.0.23 排版留白；用户行右列 70dp、合同行金额列 96dp，金额不再贴边。
+- [x] 首页白色浮卡、深墨预览块、三列 KPI、事实区与快捷入口按 v1.1.0 白色玻璃排版；用户行右列 82dp、合同行金额列保持安全宽度，金额不贴边。
 - [ ] MySQL 端到端联调（本机 MySQL 未启动）。
 - [ ] 真机安装/启动/远程登录验证（需设备与服务端地址）。

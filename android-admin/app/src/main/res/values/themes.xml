@@ -2,9 +2,9 @@
     <style name="Theme.RenovationAdmin" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:statusBarColor">#EDF1F7</item>
+        <item name="android:statusBarColor">#F1F4F0</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:colorAccent">#1B4DFF</item>
+        <item name="android:colorAccent">#1F9E66</item>
     </style>
 </resources>
